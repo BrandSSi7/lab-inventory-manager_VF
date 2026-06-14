@@ -1,0 +1,89 @@
+"""
+models/history.py
+-----------------
+Modelo del Historial de Auditoría. Gestiona la tabla 'historial'.
+Es un modelo de solo-escritura/lectura: los registros nunca se editan
+ni se eliminan (principio de integridad de auditoría).
+
+Autores: Equipo de Ingeniería Informática - 4to Semestre
+Proyecto: Xorte - Lab Inventory Manager
+"""
+
+from datetime import datetime
+from database import get_connection
+
+
+# Criterios válidos de ordenamiento para la vista del historial
+ORDENES_VALIDOS = {
+    "Más Recientes":  "ORDER BY id DESC",
+    "Más Antiguos":   "ORDER BY id ASC",
+    "A-Z (Acción)":   "ORDER BY accion ASC",
+    "A-Z (Activo)":   "ORDER BY referencia ASC",
+    "A-Z (Usuario)":  "ORDER BY responsable ASC",
+    "A-Z (Detalles)": "ORDER BY detalles ASC",
+}
+
+
+def registrar(accion: str, referencia: str, responsable: str,
+              detalles: str, categoria: str) -> None:
+    """
+    Inserta un nuevo registro en el historial de auditoría.
+    Esta función es llamada por todos los controladores después de cada operación.
+    """
+    fecha_hora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO historial (accion, referencia, responsable, fecha, detalles, categoria)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        accion.upper(),
+        referencia.upper(),
+        responsable.upper(),
+        fecha_hora,
+        detalles.upper(),
+        categoria
+    ))
+    conn.commit()
+    conn.close()
+
+
+def obtener_todos(texto_busqueda: str = "", categoria: str = "Todos",
+                  orden: str = "Más Recientes") -> list:
+    """
+    Devuelve los registros del historial con soporte de búsqueda,
+    filtrado por categoría y ordenamiento configurable.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    query = "SELECT id, accion, referencia, responsable, fecha, detalles FROM historial WHERE 1=1"
+    params = []
+
+    # Filtrar por categoría si no es "Todos"
+    if categoria and categoria != "Todos":
+        query += " AND categoria = ?"
+        params.append(categoria)
+
+    # Búsqueda parcial sobre múltiples campos
+    if texto_busqueda:
+        term = f"%{texto_busqueda.upper()}%"
+        query += """
+            AND (
+                UPPER(accion)      LIKE ?
+             OR UPPER(referencia)  LIKE ?
+             OR UPPER(responsable) LIKE ?
+             OR UPPER(detalles)    LIKE ?
+            )
+        """
+        params.extend([term, term, term, term])
+
+    # Aplicar orden. Si el valor no está en el diccionario, usamos el default.
+    clausula_orden = ORDENES_VALIDOS.get(orden, "ORDER BY id DESC")
+    query += f" {clausula_orden}"
+
+    cursor.execute(query, params)
+    resultado = cursor.fetchall()
+    conn.close()
+    return resultado
