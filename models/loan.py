@@ -34,6 +34,15 @@ def _es_fecha_valida(fecha_str: str) -> tuple[bool, str]:
         return False, f"La fecha '{fecha_str}' no tiene el formato correcto (DD/MM/AAAA)."
 
 
+def _fecha_devolucion_es_futura(fecha_devolucion: str) -> bool:
+    """
+    Verifica que la fecha de devolución sea ESTRICTAMENTE posterior a hoy.
+    Una devolución para hoy mismo no se acepta: debe ser al menos mañana.
+    """
+    fd = datetime.strptime(fecha_devolucion, "%d/%m/%Y")
+    return fd.date() > datetime.now().date()
+
+
 def _fecha_devolucion_es_posterior(fecha_prestamo: str, fecha_devolucion: str) -> bool:
     """Verifica que la devolución sea igual o posterior al préstamo."""
     fp = datetime.strptime(fecha_prestamo,   "%d/%m/%Y")
@@ -47,35 +56,44 @@ def _fecha_devolucion_es_posterior(fecha_prestamo: str, fecha_devolucion: str) -
 
 def obtener_todos(texto_busqueda: str = "", filtro_estado: str = "ALL") -> list:
     """
-    Devuelve todos los préstamos con soporte de filtrado mejorado.
-
-    La búsqueda funciona sobre: equipo (tipo/nombre), serial, prestatario,
-    fecha de préstamo y fecha de devolución. Esto corrige el buscador original
-    que no filtraba por fecha ni serial correctamente.
+    Devuelve todos los préstamos. Filtra por equipo, serial, prestatario y fechas.
+    Si el término es un número entero, también busca por ID exacto de préstamo.
     """
     conn = get_connection()
     cursor = conn.cursor()
 
-    query = "SELECT * FROM prestamos WHERE 1=1"
+    # Construimos la cláusula WHERE en partes para mayor claridad
+    condiciones = ["1=1"]
     params = []
 
     if filtro_estado.upper() != "ALL":
-        query += " AND UPPER(estado) = ?"
+        condiciones.append("UPPER(estado) = ?")
         params.append(filtro_estado.upper())
 
     if texto_busqueda:
-        term = f"%{texto_busqueda.upper()}%"
-        query += """
-            AND (
-                UPPER(equipo)      LIKE ?
-             OR UPPER(serial)      LIKE ?
-             OR UPPER(prestatario) LIKE ?
-             OR UPPER(fecha_p)     LIKE ?
-             OR UPPER(fecha_d)     LIKE ?
+        t = texto_busqueda.strip()
+        term = f"%{t.upper()}%"
+        if t.isdigit():
+            condiciones.append(
+                "(id = ?"
+                " OR UPPER(equipo)      LIKE ?"
+                " OR UPPER(serial)      LIKE ?"
+                " OR UPPER(prestatario) LIKE ?"
+                " OR UPPER(fecha_p)     LIKE ?"
+                " OR UPPER(fecha_d)     LIKE ?)"
             )
-        """
-        params.extend([term, term, term, term, term])
+            params.extend([int(t), term, term, term, term, term])
+        else:
+            condiciones.append(
+                "(UPPER(equipo)      LIKE ?"
+                " OR UPPER(serial)      LIKE ?"
+                " OR UPPER(prestatario) LIKE ?"
+                " OR UPPER(fecha_p)     LIKE ?"
+                " OR UPPER(fecha_d)     LIKE ?)"
+            )
+            params.extend([term, term, term, term, term])
 
+    query = "SELECT * FROM prestamos WHERE " + " AND ".join(condiciones)
     cursor.execute(query, params)
     resultado = cursor.fetchall()
     conn.close()
@@ -116,6 +134,9 @@ def registrar_prestamo(id_activo: int, prestatario: str,
     fecha_d_ok, msg_d = _es_fecha_valida(fecha_devolucion)
     if not fecha_d_ok:
         return False, f"Fecha de devolución inválida: {msg_d}"
+
+    if not _fecha_devolucion_es_futura(fecha_devolucion):
+        return False, "La fecha de devolución debe ser estrictamente posterior a hoy. No se aceptan fechas pasadas ni la fecha actual."
 
     if not _fecha_devolucion_es_posterior(fecha_prestamo, fecha_devolucion):
         return False, "La fecha de devolución no puede ser anterior a la fecha de préstamo."
@@ -188,6 +209,56 @@ def actualizar_prestamo(id_prestamo: int, nueva_fecha_devolucion: str,
     conn.commit()
     conn.close()
     return True, nombre_equipo
+
+
+def devolver_prestamo(id_prestamo: int) -> tuple[bool, str]:
+    """
+    Procesa la devolución completa de un préstamo en una ÚNICA transacción:
+      1. Marca el préstamo como 'DEVUELTO' y registra la fecha real de devolución.
+      2. Busca el serial del equipo en el préstamo.
+      3. Actualiza el estado del equipo a 'OPERATIVO' en la tabla equipos.
+
+    Si cualquier paso falla, hace rollback de todo (atomicidad garantizada).
+    Devuelve (True, nombre_equipo) o (False, "mensaje de error").
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT equipo, serial FROM prestamos WHERE id = ?",
+        (id_prestamo,)
+    )
+    resultado = cursor.fetchone()
+
+    if not resultado:
+        conn.close()
+        return False, "No se encontró el préstamo con ese ID."
+
+    nombre_equipo, serial_equipo = resultado
+    fecha_real_devolucion = datetime.now().strftime("%d/%m/%Y")
+
+    try:
+        # Paso 1: Actualizar el préstamo
+        cursor.execute("""
+            UPDATE prestamos
+            SET estado = 'DEVUELTO', fecha_d = ?
+            WHERE id = ?
+        """, (fecha_real_devolucion, id_prestamo))
+
+        # Paso 2: Restaurar el equipo a OPERATIVO usando el serial como clave
+        cursor.execute(
+            "UPDATE equipos SET estado = 'OPERATIVO' WHERE UPPER(serial) = ?",
+            (serial_equipo.upper(),)
+        )
+
+        conn.commit()
+        conn.close()
+        return True, nombre_equipo
+
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error al procesar la devolución: {e}"
 
 
 def eliminar_prestamo(id_prestamo: int) -> tuple[bool, str]:

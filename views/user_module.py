@@ -243,6 +243,8 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         self.auth       = auth_controller
         self.on_saved   = on_saved
         self.id_usuario = datos_usuario[0]
+        # Guardamos el rol original para devolverlo intacto si el editor no es admin
+        self.rol_original = str(datos_usuario[7]) if len(datos_usuario) > 7 else "PRESTATARIO EXTERNO"
 
         self.title(f"Editar perfil — ID {self.id_usuario}")
         self.geometry("430x680")
@@ -281,20 +283,43 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         self.ent_telefono = campo("Número de contacto:", datos[5])
 
         # Sección de roles
+        es_admin = self.auth.es_administrador()
+
         ctk.CTkLabel(
             scroll, text="ROLES Y PERMISOS DEL SISTEMA",
             font=font_small(), text_color=ACCENT_BLUE
         ).pack(anchor="w", pady=(20, 8))
 
-        self.chk_admin      = ctk.CTkCheckBox(scroll, text="Administrador Ejecutivo",
-                                               fg_color=ACCENT_BLUE, text_color=TXT_MAIN)
-        self.chk_operador   = ctk.CTkCheckBox(scroll, text="Operador de Laboratorio",
-                                               fg_color=ACCENT_BLUE, text_color=TXT_MAIN)
-        self.chk_prestatario = ctk.CTkCheckBox(scroll, text="Prestatario Externo",
-                                                fg_color=ACCENT_BLUE, text_color=TXT_MAIN)
+        # Los checkboxes de rol solo son editables para Administradores Ejecutivos.
+        # Para cualquier otro rol, se muestran como referencia pero bloqueados.
+        estado_chk = "normal" if es_admin else "disabled"
+
+        self.chk_admin = ctk.CTkCheckBox(
+            scroll, text="Administrador Ejecutivo",
+            fg_color=ACCENT_BLUE, text_color=TXT_MAIN,
+            state=estado_chk
+        )
+        self.chk_operador = ctk.CTkCheckBox(
+            scroll, text="Operador de Laboratorio",
+            fg_color=ACCENT_BLUE, text_color=TXT_MAIN,
+            state=estado_chk
+        )
+        self.chk_prestatario = ctk.CTkCheckBox(
+            scroll, text="Prestatario Externo",
+            fg_color=ACCENT_BLUE, text_color=TXT_MAIN,
+            state=estado_chk
+        )
 
         for chk in (self.chk_admin, self.chk_operador, self.chk_prestatario):
             chk.pack(anchor="w", padx=10, pady=5)
+
+        # Nota visible para usuarios sin permisos de administración
+        if not es_admin:
+            ctk.CTkLabel(
+                scroll,
+                text="🔒 Solo un Administrador puede modificar roles del sistema.",
+                font=ctk.CTkFont(size=10), text_color="#EF4444"
+            ).pack(anchor="w", padx=10, pady=(0, 4))
 
         # Marcar el rol actual
         rol_actual = str(datos[7]).upper() if len(datos) > 7 else ""
@@ -337,6 +362,19 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         self.ent_fnac.insert(0, formateado)
 
     def _construir_rol_final(self) -> str:
+        """
+        Construye el string de rol a guardar.
+
+        Si el usuario activo NO es administrador, devuelve el rol original
+        almacenado al abrir el modal. Esto ignora completamente el estado
+        de los checkboxes, que pueden estar pre-marcados aunque bloqueados
+        (bug de CTkCheckBox: .get() devuelve 1 aunque state='disabled').
+
+        Solo si el usuario activo ES administrador se leen los checkboxes.
+        """
+        if not self.auth.es_administrador():
+            return self.rol_original
+
         roles = []
         if self.chk_admin.get():
             roles.append("ADMINISTRADOR EJECUTIVO")

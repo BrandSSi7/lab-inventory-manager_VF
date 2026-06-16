@@ -328,37 +328,33 @@ class IncorporarActivoModal(ctk.CTkToplevel):
         self.ent_modelo = entrada("Modelo de fábrica")
         self.ent_serial = entrada("Número de serial único")
 
-        self.combo_estado = ctk.CTkComboBox(
-            scroll, values=["OPERATIVO", "MANTENIMIENTO", "ASIGNADO", "INACTIVO"],
-            width=390, height=INPUT_H,
-            fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT,
-            button_color=BG_INPUT, button_hover_color=ACCENT_HOVER
-        )
-        self.combo_estado.set("OPERATIVO")
-        self.combo_estado.pack(pady=6)
+        # Estado inicial: siempre OPERATIVO. No se expone como campo editable
+        # porque CTkComboBox disabled no preserva el valor al llamar .get().
+        # El valor "OPERATIVO" se inyecta directamente en _guardar().
+        ctk.CTkFrame(scroll, fg_color=BG_INPUT, corner_radius=6,
+                     border_width=1, border_color=BORDER_INPUT,
+                     height=INPUT_H).pack(fill="x", pady=6)
+        ctk.CTkLabel(
+            scroll,
+            text="Estado inicial: OPERATIVO  (solo modificable desde el inventario)",
+            font=ctk.CTkFont(size=11), text_color=TXT_MUTED
+        ).pack(anchor="w", pady=(0, 4))
 
         ctk.CTkLabel(scroll, text="LOGÍSTICA", font=font_small(),
                      text_color=ACCENT_BLUE).pack(anchor="w", pady=(14, 2))
 
-        # Campo de fecha con botón de edición
-        frame_fecha = ctk.CTkFrame(scroll, fg_color="transparent")
-        frame_fecha.pack(pady=6, fill="x")
+        ctk.CTkLabel(
+            scroll, text="Fecha de próxima revisión (DD/MM/AAAA):",
+            font=font_small(), text_color=TXT_MUTED
+        ).pack(anchor="w", pady=(4, 2))
 
+        # Campo siempre habilitado: CTkEntry disabled no devuelve valor con .get()
         self.ent_fecha = ctk.CTkEntry(
-            frame_fecha, width=330, height=INPUT_H,
-            fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT,
-            state="disabled"   # Deshabilitado por defecto
+            scroll, width=390, height=INPUT_H,
+            fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT
         )
-        self.ent_fecha.pack(side="left", padx=(0, 6))
+        self.ent_fecha.pack(pady=(0, 6))
         self.ent_fecha.insert(0, (datetime.now() + timedelta(days=30)).strftime("%d/%m/%Y"))
-
-        self.btn_editar_fecha = ctk.CTkButton(
-            frame_fecha, text="✏️ Editar", width=55, height=INPUT_H,
-            fg_color=("#CBD5E1", "#374151"), hover_color=("#94A3B8", "#4B5563"),
-            text_color=TXT_MAIN, corner_radius=BTN_RADIUS,
-            command=self._habilitar_edicion_fecha
-        )
-        self.btn_editar_fecha.pack(side="left")
         self.ent_fecha.bind("<KeyRelease>", self._autocompletar_fecha)
 
         ctk.CTkButton(
@@ -368,20 +364,6 @@ class IncorporarActivoModal(ctk.CTkToplevel):
             text_color="white", corner_radius=BTN_RADIUS,
             command=self._guardar
         ).pack(pady=(20, 15))
-
-    def _habilitar_edicion_fecha(self):
-        """Habilita el campo y deshabilita el botón para evitar doble clic."""
-        self.ent_fecha.configure(state="normal")
-        self.ent_fecha.focus()
-        self.btn_editar_fecha.configure(state="disabled")
-
-    def _restablecer_campo_fecha(self):
-        """
-        Vuelve el campo y el botón a su estado original tras guardar o cancelar.
-        Corrección del bug original donde el botón quedaba deshabilitado para siempre.
-        """
-        self.ent_fecha.configure(state="disabled")
-        self.btn_editar_fecha.configure(state="normal")
 
     def _autocompletar_fecha(self, event):
         if event.keysym in ("BackSpace", "Delete", "Left", "Right", "Tab"):
@@ -401,7 +383,7 @@ class IncorporarActivoModal(ctk.CTkToplevel):
             "marca":         self.ent_marca.get().strip(),
             "modelo":        self.ent_modelo.get().strip(),
             "serial":        self.ent_serial.get().strip(),
-            "estado":        self.combo_estado.get(),
+            "estado":        "OPERATIVO",
             "mantenimiento": self.ent_fecha.get().strip(),
         }
 
@@ -414,9 +396,6 @@ class IncorporarActivoModal(ctk.CTkToplevel):
             return
 
         exito, msg = self.ctrl.incorporar_activo(datos)
-
-        # Restablecer el campo de fecha sin importar si el guardado fue exitoso
-        self._restablecer_campo_fecha()
 
         if exito:
             messagebox.showinfo("Incorporación exitosa",
@@ -598,3 +577,4 @@ class ExportarModal(ctk.CTkToplevel):
 
         messagebox.showinfo("Exportación exitosa", f"Archivo guardado en:\n{path}", parent=self)
         self.destroy()
+

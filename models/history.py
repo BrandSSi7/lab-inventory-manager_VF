@@ -52,36 +52,47 @@ def registrar(accion: str, referencia: str, responsable: str,
 def obtener_todos(texto_busqueda: str = "", categoria: str = "Todos",
                   orden: str = "Más Recientes") -> list:
     """
-    Devuelve los registros del historial con soporte de búsqueda,
-    filtrado por categoría y ordenamiento configurable.
+    Devuelve los registros del historial con búsqueda, filtro por categoría y orden.
+    Si el término es un número entero, también busca por ID exacto de log.
     """
     conn = get_connection()
     cursor = conn.cursor()
 
-    query = "SELECT id, accion, referencia, responsable, fecha, detalles FROM historial WHERE 1=1"
+    condiciones = ["1=1"]
     params = []
 
-    # Filtrar por categoría si no es "Todos"
     if categoria and categoria != "Todos":
-        query += " AND categoria = ?"
+        condiciones.append("categoria = ?")
         params.append(categoria)
 
-    # Búsqueda parcial sobre múltiples campos
     if texto_busqueda:
-        term = f"%{texto_busqueda.upper()}%"
-        query += """
-            AND (
-                UPPER(accion)      LIKE ?
-             OR UPPER(referencia)  LIKE ?
-             OR UPPER(responsable) LIKE ?
-             OR UPPER(detalles)    LIKE ?
+        t = texto_busqueda.strip()
+        term = f"%{t.upper()}%"
+        if t.isdigit():
+            condiciones.append(
+                "(id = ?"
+                " OR UPPER(accion)      LIKE ?"
+                " OR UPPER(referencia)  LIKE ?"
+                " OR UPPER(responsable) LIKE ?"
+                " OR UPPER(detalles)    LIKE ?)"
             )
-        """
-        params.extend([term, term, term, term])
+            params.extend([int(t), term, term, term, term])
+        else:
+            condiciones.append(
+                "(UPPER(accion)      LIKE ?"
+                " OR UPPER(referencia)  LIKE ?"
+                " OR UPPER(responsable) LIKE ?"
+                " OR UPPER(detalles)    LIKE ?)"
+            )
+            params.extend([term, term, term, term])
 
-    # Aplicar orden. Si el valor no está en el diccionario, usamos el default.
     clausula_orden = ORDENES_VALIDOS.get(orden, "ORDER BY id DESC")
-    query += f" {clausula_orden}"
+    query = (
+        "SELECT id, accion, referencia, responsable, fecha, detalles "
+        "FROM historial WHERE "
+        + " AND ".join(condiciones)
+        + f" {clausula_orden}"
+    )
 
     cursor.execute(query, params)
     resultado = cursor.fetchall()

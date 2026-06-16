@@ -82,6 +82,25 @@ class LoanController:
     # Actualización
     # ------------------------------------------------------------------
 
+    def procesar_devolucion(self, id_prestamo: int) -> tuple[bool, str]:
+        """
+        Procesa la devolución de un préstamo: actualiza el préstamo a 'DEVUELTO'
+        y restaura el estado del equipo a 'OPERATIVO' en una sola transacción.
+        """
+        exito, nombre_o_error = loan_model.devolver_prestamo(id_prestamo)
+
+        if exito:
+            history_model.registrar(
+                accion="DEVOLUCIÓN",
+                referencia=f"PRÉSTAMO ID: {id_prestamo}",
+                responsable=self.auth.usuario_actual,
+                detalles=f"Equipo '{nombre_o_error}' devuelto. Estado restaurado a OPERATIVO.",
+                categoria="Préstamos"
+            )
+            return True, f"El equipo '{nombre_o_error}' fue devuelto y está nuevamente disponible."
+
+        return False, nombre_o_error
+
     def modificar_prestamo(self, id_prestamo: int,
                            nueva_fecha_devolucion: str,
                            nuevo_estado: str) -> tuple[bool, str]:

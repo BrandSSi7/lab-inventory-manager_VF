@@ -66,10 +66,22 @@ class AuthController:
                          confirmacion: str) -> tuple[bool, str]:
         """
         Cambia la contraseña del usuario de sesión activa.
-        Valida que ambas entradas coincidan antes de delegar al modelo.
+        Valida coincidencia Y fortaleza antes de delegar al modelo.
         """
-        if nueva_password.strip() != confirmacion.strip():
+        nueva_password = nueva_password.strip()
+        confirmacion   = confirmacion.strip()
+
+        if nueva_password != confirmacion:
             return False, "Las contraseñas no coinciden. Inténtelo de nuevo."
+
+        # Validación de fortaleza en el Controlador (no solo en el Modelo)
+        import re
+        patron = re.compile(r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$')
+        if not patron.match(nueva_password):
+            return False, (
+                "La contraseña debe tener mínimo 8 caracteres e incluir "
+                "al menos una letra, un número y un carácter especial (ej: @, #, !, %)."
+            )
 
         exito, msg = user_model.cambiar_password(self.usuario_actual, nueva_password)
         if not exito:

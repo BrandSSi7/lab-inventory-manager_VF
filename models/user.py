@@ -51,17 +51,37 @@ def _es_telefono_valido(telefono: str) -> bool:
 
 def _es_fecha_valida(fecha_str: str) -> tuple[bool, str]:
     """
-    Valida que la fecha tenga formato DD/MM/AAAA y no sea futura.
-    Devuelve (True, "") si es válida, (False, "mensaje") si no.
+    Valida que la fecha tenga formato DD/MM/AAAA y sea estrictamente anterior
+    a hoy. La fecha actual misma no se acepta como fecha de nacimiento.
     """
     try:
         fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
     except ValueError:
         return False, "La fecha debe tener el formato DD/MM/AAAA y ser una fecha real."
 
-    if fecha > datetime.now():
-        return False, "La fecha de nacimiento no puede estar en el futuro."
+    # Comparamos solo la fecha (date), no la hora, para que "hoy" quede excluido
+    if fecha.date() >= datetime.now().date():
+        return False, "La fecha de nacimiento debe ser estrictamente anterior a hoy."
 
+    return True, ""
+
+
+def _es_password_segura(password: str) -> tuple[bool, str]:
+    """
+    Valida que la contraseña cumpla los requisitos mínimos de seguridad:
+      - Al menos 8 caracteres
+      - Al menos una letra (mayúscula o minúscula)
+      - Al menos un dígito numérico
+      - Al menos un carácter especial (símbolo)
+    """
+    if len(password) < 8:
+        return False, "La contraseña debe tener al menos 8 caracteres."
+    if not re.search(r'[A-Za-z]', password):
+        return False, "La contraseña debe contener al menos una letra."
+    if not re.search(r'\d', password):
+        return False, "La contraseña debe contener al menos un número."
+    if not re.search(r'[^A-Za-z0-9]', password):
+        return False, "La contraseña debe contener al menos un carácter especial (ej: @, #, !, %)."
     return True, ""
 
 
@@ -82,12 +102,17 @@ def _respuestas_son_distintas(a1: str, a2: str, a3: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def validar_login(username: str, password: str) -> bool:
-    """Comprueba si el par usuario/contraseña existe en la BD."""
+    """
+    Comprueba si el par usuario/contraseña existe en la BD.
+    La comparación es EXACTA (case-sensitive) en ambos campos.
+    Se elimina UPPER() para respetar mayúsculas, minúsculas y caracteres especiales.
+    """
     conn = get_connection()
     cursor = conn.cursor()
+    # Sin UPPER(): el username y password se comparan tal cual fueron guardados
     cursor.execute(
-        "SELECT id FROM usuarios WHERE UPPER(username) = ? AND password = ?",
-        (username.upper(), password)
+        "SELECT id FROM usuarios WHERE username = ? AND password = ?",
+        (username.strip(), password)
     )
     resultado = cursor.fetchone()
     conn.close()
@@ -99,8 +124,8 @@ def obtener_rol(username: str) -> str:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT rol FROM usuarios WHERE UPPER(username) = ?",
-        (username.upper(),)
+        "SELECT rol FROM usuarios WHERE username = ?",
+        (username.strip(),)
     )
     resultado = cursor.fetchone()
     conn.close()
@@ -112,8 +137,8 @@ def necesita_cambio_password(username: str) -> bool:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT debe_cambiar_pwd FROM usuarios WHERE UPPER(username) = ?",
-        (username.upper(),)
+        "SELECT debe_cambiar_pwd FROM usuarios WHERE username = ?",
+        (username.strip(),)
     )
     resultado = cursor.fetchone()
     conn.close()
@@ -123,16 +148,18 @@ def necesita_cambio_password(username: str) -> bool:
 def cambiar_password(username: str, nueva_password: str) -> tuple[bool, str]:
     """
     Actualiza la contraseña del usuario y limpia la bandera de cambio obligatorio.
-    La contraseña debe tener al menos 4 caracteres.
+    La nueva contraseña debe cumplir los requisitos de seguridad (8+ chars, letra,
+    número y símbolo especial).
     """
-    if len(nueva_password.strip()) < 4:
-        return False, "La contraseña debe tener al menos 4 caracteres."
+    pwd_ok, msg_pwd = _es_password_segura(nueva_password.strip())
+    if not pwd_ok:
+        return False, msg_pwd
 
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE usuarios SET password = ?, debe_cambiar_pwd = 0 WHERE UPPER(username) = ?",
-        (nueva_password.strip(), username.upper())
+        "UPDATE usuarios SET password = ?, debe_cambiar_pwd = 0 WHERE username = ?",
+        (nueva_password.strip(), username.strip())
     )
     conn.commit()
     conn.close()
@@ -157,25 +184,34 @@ def buscar_por_username_o_correo(busqueda: str):
 
 def obtener_todos(texto_busqueda: str = "") -> list:
     """
-    Devuelve todos los usuarios. Si se pasa un texto, filtra por nombre,
-    cédula, correo o username (búsqueda parcial, insensible a mayúsculas).
+    Devuelve todos los usuarios.
+    Si el término es un número entero busca por ID exacto además de los campos de texto.
     """
     conn = get_connection()
     cursor = conn.cursor()
+    base = "SELECT id, nombres, cedula, fecha_nac, correo, telefono, username, rol FROM usuarios"
 
-    if texto_busqueda:
-        term = f"%{texto_busqueda.upper()}%"
-        cursor.execute("""
-            SELECT id, nombres, cedula, fecha_nac, correo, telefono, username, rol
-            FROM usuarios
-            WHERE UPPER(nombres)  LIKE ?
-               OR UPPER(cedula)   LIKE ?
-               OR UPPER(correo)   LIKE ?
-               OR UPPER(username) LIKE ?
-        """, (term, term, term, term))
-    else:
+    if not texto_busqueda:
+        cursor.execute(base)
+    elif texto_busqueda.strip().isdigit():
+        term = f"%{texto_busqueda.strip().upper()}%"
+        id_val = int(texto_busqueda.strip())
         cursor.execute(
-            "SELECT id, nombres, cedula, fecha_nac, correo, telefono, username, rol FROM usuarios"
+            base + " WHERE id = ?"
+            " OR UPPER(nombres)  LIKE ?"
+            " OR UPPER(cedula)   LIKE ?"
+            " OR UPPER(correo)   LIKE ?"
+            " OR UPPER(username) LIKE ?",
+            (id_val, term, term, term, term)
+        )
+    else:
+        term = f"%{texto_busqueda.strip().upper()}%"
+        cursor.execute(
+            base + " WHERE UPPER(nombres)  LIKE ?"
+            " OR UPPER(cedula)   LIKE ?"
+            " OR UPPER(correo)   LIKE ?"
+            " OR UPPER(username) LIKE ?",
+            (term, term, term, term)
         )
 
     resultado = cursor.fetchall()
@@ -220,6 +256,10 @@ def crear_usuario(nom, cedula, fecha_nac, correo, telefono, username,
     fecha_ok, msg_fecha = _es_fecha_valida(fecha_nac)
     if not fecha_ok:
         return False, msg_fecha
+
+    pwd_ok, msg_pwd = _es_password_segura(password.strip())
+    if not pwd_ok:
+        return False, msg_pwd
 
     # El correo es opcional pero si se escribe, debe ser válido
     if correo and correo != "NO ASIGNADO":

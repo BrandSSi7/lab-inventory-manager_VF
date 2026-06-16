@@ -52,23 +52,21 @@ class AssetController:
     def incorporar_activo(self, datos: dict) -> tuple[bool, str]:
         """
         Registra un nuevo activo tecnológico en el inventario.
-
-        Campos esperados en 'datos':
-            nombre, marca, modelo, serial, estado, mantenimiento
+        El modelo devuelve (False, mensaje) para cualquier error — nunca lanza excepciones.
         """
         exito, msg = asset_model.crear_activo(
-            nombre       = datos.get("nombre", ""),
-            marca        = datos.get("marca", ""),
-            modelo       = datos.get("modelo", ""),
-            serial       = datos.get("serial", ""),
-            estado       = datos.get("estado", "OPERATIVO"),
+            nombre        = datos.get("nombre", ""),
+            marca         = datos.get("marca", ""),
+            modelo        = datos.get("modelo", ""),
+            serial        = datos.get("serial", ""),
+            estado        = datos.get("estado", "OPERATIVO"),
             mantenimiento = datos.get("mantenimiento", ""),
         )
 
         if exito:
-            serial  = datos.get("serial", "").upper()
-            nombre  = datos.get("nombre", "").upper()
-            marca   = datos.get("marca", "").upper()
+            serial = datos.get("serial", "").upper()
+            nombre = datos.get("nombre", "").upper()
+            marca  = datos.get("marca", "").upper()
             history_model.registrar(
                 accion="INCORPORACIÓN",
                 referencia=f"EQUIPO: {nombre}",

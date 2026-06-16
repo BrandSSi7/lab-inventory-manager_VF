@@ -117,7 +117,7 @@ class AssignModule(ctk.CTkFrame):
             font=font_section(), text_color=TXT_MUTED
         ).pack(anchor="w", pady=(0, 14))
 
-        # --- Prestatario: SOLO ComboBox, sin texto libre ---
+        # --- Prestatario: SOLO ComboBox, sin texto libre ni alta rápida ---
         ctk.CTkLabel(scroll, text="Responsable del préstamo: *",
                      font=font_small(), text_color=TXT_MUTED).pack(anchor="w")
         ctk.CTkLabel(
@@ -126,22 +126,12 @@ class AssignModule(ctk.CTkFrame):
             font=ctk.CTkFont(size=10), text_color="#EF4444"
         ).pack(anchor="w", pady=(0, 4))
 
-        frame_combo = ctk.CTkFrame(scroll, fg_color="transparent")
-        frame_combo.pack(fill="x", pady=(0, 12))
-
         self.combo_prestatario = ctk.CTkComboBox(
-            frame_combo, values=[], width=220, height=INPUT_H,
+            scroll, values=[], width=300, height=INPUT_H,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT,
             button_color=BG_INPUT, button_hover_color=ACCENT_HOVER
         )
-        self.combo_prestatario.pack(side="left", padx=(0, 8))
-
-        ctk.CTkButton(
-            frame_combo, text="+ Nuevo", width=75, height=INPUT_H,
-            fg_color="#10B981", hover_color="#059669",
-            text_color="white", corner_radius=BTN_RADIUS,
-            command=self._abrir_registro_rapido
-        ).pack(side="left")
+        self.combo_prestatario.pack(pady=(0, 12), anchor="w")
 
         # --- Fechas con autocompletado ---
         ctk.CTkLabel(scroll, text="Fecha del préstamo: *",
@@ -223,10 +213,6 @@ class AssignModule(ctk.CTkFrame):
     # Acciones
     # ------------------------------------------------------------------
 
-    def _abrir_registro_rapido(self):
-        """Abre un mini-modal para dar de alta un prestatario externo rápidamente."""
-        RegistroRapidoModal(self, self.user_ctrl, self._recargar_combo_prestatarios)
-
     def _procesar_prestamo(self):
         seleccion = self.tree_equipos.selection()
         if not seleccion:
@@ -307,65 +293,6 @@ class AssignModule(ctk.CTkFrame):
         self.tree_equipos.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9")
 
 
-# ------------------------------------------------------------------
-# Modal: Alta rápida de prestatario externo
-# ------------------------------------------------------------------
-
-class RegistroRapidoModal(ctk.CTkToplevel):
-    """Mini-modal para registrar un prestatario sin salir del módulo de asignación."""
-
-    def __init__(self, parent, user_controller, on_saved):
-        super().__init__(parent)
-        self.user_ctrl = user_controller
-        self.on_saved  = on_saved
-
-        self.title("Nuevo prestatario externo")
-        self.geometry("340x190")
-        self.resizable(False, False)
-        self.configure(fg_color=BG_CARD)
-        self.grab_set()
-
-        ctk.CTkLabel(
-            self, text="REGISTRAR PRESTATARIO EXTERNO",
-            font=font_section(), text_color=TXT_MAIN
-        ).pack(pady=(22, 10))
-
-        self.ent_nombre = ctk.CTkEntry(
-            self, placeholder_text="Nombre completo del prestatario",
-            width=280, height=INPUT_H,
-            fg_color=BG_INPUT, border_color=BORDER_INPUT,
-            text_color=TXT_INPUT, placeholder_text_color=TXT_PLACEHOLDER
-        )
-        self.ent_nombre.pack(pady=8)
-        self.ent_nombre.focus()
-
-        ctk.CTkButton(
-            self, text="Dar de alta",
-            font=font_section(), width=280, height=BTN_H,
-            fg_color="#10B981", hover_color="#059669",
-            text_color="white", corner_radius=BTN_RADIUS,
-            command=self._guardar
-        ).pack(pady=14)
-
-        self.bind("<Return>", lambda e: self._guardar())
-
-    def _guardar(self):
-        nombre = self.ent_nombre.get().strip()
-        if not nombre:
-            messagebox.showwarning("Campo vacío",
-                                   "Ingresa el nombre del prestatario.", parent=self)
-            return
-
-        exito, resultado = self.user_ctrl.registrar_usuario_rapido(nombre)
-
-        if exito:
-            messagebox.showinfo(
-                "Alta exitosa",
-                f"Prestatario '{nombre.title()}' registrado.\nLogin asignado: {resultado}",
-                parent=self
-            )
-            # Recargar el combo del módulo padre con el nuevo nombre preseleccionado
-            self.on_saved(preseleccionar=nombre.title())
-            self.destroy()
-        else:
-            messagebox.showerror("Error", resultado, parent=self)
+# RegistroRapidoModal fue eliminado intencionalmente en la revisión QA.
+# El módulo de asignación ya NO permite dar de alta usuarios nuevos.
+# Para registrar un prestatario, usar el módulo de Usuarios desde el sidebar.

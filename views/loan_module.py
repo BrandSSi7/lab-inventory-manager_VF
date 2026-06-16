@@ -140,6 +140,14 @@ class LoanModule(ctk.CTkFrame):
         ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
+            footer, text="✔ Devolver equipo", width=140, height=BTN_H,
+            font=font_section(),
+            fg_color="#10B981", hover_color="#059669",
+            text_color="white", corner_radius=BTN_RADIUS,
+            command=self._procesar_devolucion
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
             footer, text="Modificar préstamo", width=145, height=BTN_H,
             fg_color="#D97706", hover_color="#B45309",
             text_color="white", corner_radius=BTN_RADIUS,
@@ -176,6 +184,36 @@ class LoanModule(ctk.CTkFrame):
     # ------------------------------------------------------------------
     # Acciones
     # ------------------------------------------------------------------
+
+    def _procesar_devolucion(self):
+        seleccion = self.tree.selection()
+        if not seleccion:
+            messagebox.showinfo("Atención", "Selecciona un préstamo de la tabla primero.", parent=self)
+            return
+
+        valores = self.tree.item(seleccion[0])["values"]
+        estado_actual = str(valores[6]).upper()
+
+        if estado_actual == "DEVUELTO":
+            messagebox.showinfo("Ya devuelto", "Este préstamo ya fue marcado como devuelto.", parent=self)
+            return
+
+        confirmar = messagebox.askyesno(
+            "Confirmar devolución",
+            f"¿Registrar la devolución del equipo '{valores[1]}'?\n\n"
+            f"• El préstamo quedará marcado como DEVUELTO.\n"
+            f"• El equipo volverá al estado OPERATIVO automáticamente.",
+            parent=self
+        )
+        if not confirmar:
+            return
+
+        exito, msg = self.ctrl.procesar_devolucion(valores[0])
+        if exito:
+            messagebox.showinfo("Devolución registrada", msg, parent=self)
+            self._cargar_datos()
+        else:
+            messagebox.showerror("Error", msg, parent=self)
 
     def _abrir_modificar(self):
         seleccion = self.tree.selection()

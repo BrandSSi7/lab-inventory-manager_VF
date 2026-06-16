@@ -10,8 +10,32 @@ Autores: Equipo de Ingeniería Informática - 4to Semestre
 Proyecto: Xorte - Lab Inventory Manager
 """
 
+import re
+
 import models.user    as user_model
 import models.history as history_model
+
+
+# Patrón de contraseña segura: mínimo 8 caracteres, letra, número y símbolo.
+# Duplicado aquí intencionalmente como segunda línea de defensa del Controlador.
+_PATRON_PASSWORD = re.compile(
+    r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
+)
+
+
+def _validar_password_segura(password: str) -> None:
+    """
+    Lanza ValueError si la contraseña no cumple los requisitos mínimos.
+    Se llama en el Controlador ANTES de delegar al Modelo, garantizando
+    que la validación ocurra aunque el Modelo sea intercambiado o modificado.
+    """
+    if not password or not password.strip():
+        raise ValueError("La contraseña no puede estar vacía.")
+    if not _PATRON_PASSWORD.match(password.strip()):
+        raise ValueError(
+            "La contraseña debe tener mínimo 8 caracteres e incluir "
+            "al menos una letra, un número y un carácter especial (ej: @, #, !, %)."
+        )
 
 
 class UserController:
@@ -44,10 +68,19 @@ class UserController:
         Recibe un diccionario con todos los campos del formulario de registro
         y los pasa al modelo para validación e inserción.
 
+        El Controlador valida la contraseña PRIMERO (capa de defensa propia)
+        antes de delegar al Modelo.
+
         Campos esperados en 'datos':
             nombres, cedula, fecha_nac, correo, telefono, username,
             password, q1, a1, q2, a2, q3, a3
         """
+        # --- Validación de contraseña en el Controlador ---
+        try:
+            _validar_password_segura(datos.get("password", ""))
+        except ValueError as e:
+            return False, str(e)
+
         exito, msg = user_model.crear_usuario(
             nom       = datos.get("nombres", ""),
             cedula    = datos.get("cedula", ""),
@@ -103,9 +136,33 @@ class UserController:
         """
         Actualiza los datos de perfil de un usuario existente.
 
+        SEGURIDAD: Si el rol nuevo contiene 'ADMINISTRADOR', solo un usuario
+        con rol de Administrador Ejecutivo puede ejecutar esta acción.
+        Cualquier otro intento levanta un error y se rechaza sin tocar la BD.
+
         Campos esperados en 'datos':
             nombres, cedula, fecha_nac, correo, telefono, rol
         """
+        rol_nuevo = datos.get("rol", "").upper()
+
+        # --- Protección contra escalada de privilegios ---
+        roles_elevados = ("ADMINISTRADOR EJECUTIVO", "OPERADOR DE LABORATORIO")
+        intenta_elevar = any(r in rol_nuevo for r in roles_elevados)
+
+        if intenta_elevar and not self.auth.es_administrador():
+            # Registramos el intento fallido en el historial para auditoría
+            history_model.registrar(
+                accion="ALERTA DE SEGURIDAD",
+                referencia=f"USUARIO ID: {id_usuario}",
+                responsable=self.auth.usuario_actual,
+                detalles=f"INTENTO DE ESCALADA DE PRIVILEGIOS BLOQUEADO. ROL SOLICITADO: {rol_nuevo}.",
+                categoria="Sistema"
+            )
+            return False, (
+                "No tienes permisos para asignar este rol. "
+                "Solo un Administrador Ejecutivo puede modificar privilegios del sistema."
+            )
+
         exito, msg = user_model.actualizar_usuario(
             id_usuario = id_usuario,
             nom        = datos.get("nombres", ""),
@@ -133,13 +190,15 @@ class UserController:
                                   password_temporal: str) -> tuple[bool, str]:
         """
         Permite a un Administrador restablecer la contraseña de otro usuario.
-        Valida que quien ejecuta la acción tenga permisos de administrador.
+        La contraseña temporal también debe cumplir los requisitos de seguridad.
         """
         if not self.auth.es_administrador():
             return False, "Solo un Administrador Ejecutivo puede resetear contraseñas."
 
-        if not password_temporal or len(password_temporal.strip()) < 4:
-            return False, "La contraseña temporal debe tener al menos 4 caracteres."
+        try:
+            _validar_password_segura(password_temporal)
+        except ValueError as e:
+            return False, str(e)
 
         username_afectado = user_model.obtener_username_por_id(id_usuario)
         user_model.resetear_password(id_usuario, password_temporal.strip())

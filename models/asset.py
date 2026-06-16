@@ -23,16 +23,32 @@ ESTADOS_VALIDOS = {"OPERATIVO", "MANTENIMIENTO", "ASIGNADO", "INACTIVO"}
 # ---------------------------------------------------------------------------
 
 def _es_fecha_valida(fecha_str: str) -> tuple[bool, str]:
-    """
-    Valida que la fecha tenga formato DD/MM/AAAA y sea una fecha real.
-    A diferencia de la fecha de nacimiento, la fecha de mantenimiento
-    SÍ puede estar en el futuro (es una fecha planificada).
-    """
+    """Valida formato DD/MM/AAAA y que sea una fecha de calendario real."""
     try:
         datetime.strptime(fecha_str, "%d/%m/%Y")
         return True, ""
     except ValueError:
-        return False, "La fecha debe tener el formato DD/MM/AAAA y ser una fecha real (ej: 15/07/2025)."
+        return False, "La fecha debe tener el formato DD/MM/AAAA y ser una fecha real (ej: 15/07/2026)."
+
+
+def _es_fecha_futura(fecha_str: str) -> tuple[bool, str]:
+    """
+    Valida que la fecha de próxima revisión sea igual o posterior a hoy.
+    Una fecha de mantenimiento en el pasado no tiene sentido operativo:
+    significa que el equipo ya debería haber sido revisado y la alarma
+    se dispararía inmediatamente al registrarlo.
+    """
+    try:
+        fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+    except ValueError:
+        return False, "La fecha debe tener el formato DD/MM/AAAA."
+
+    if fecha.date() < datetime.now().date():
+        return False, (
+            f"La fecha de próxima revisión ({fecha_str}) ya está vencida. "
+            "Ingresa una fecha igual o posterior a hoy."
+        )
+    return True, ""
 
 
 # ---------------------------------------------------------------------------
@@ -42,7 +58,8 @@ def _es_fecha_valida(fecha_str: str) -> tuple[bool, str]:
 def obtener_todos(texto_busqueda: str = "", filtro_estado: str = "ALL") -> list:
     """
     Devuelve todos los equipos. Acepta filtro por estado y búsqueda parcial
-    por nombre, marca, modelo o serial.
+    por nombre, marca, modelo o serial. También permite búsqueda exacta por ID
+    si el texto ingresado es un número entero.
     """
     conn = get_connection()
     cursor = conn.cursor()
@@ -56,8 +73,17 @@ def obtener_todos(texto_busqueda: str = "", filtro_estado: str = "ALL") -> list:
 
     if texto_busqueda:
         term = f"%{texto_busqueda.upper()}%"
-        query += " AND (UPPER(nombre) LIKE ? OR UPPER(marca) LIKE ? OR UPPER(modelo) LIKE ? OR UPPER(serial) LIKE ?)"
-        params.extend([term, term, term, term])
+        # Si el texto es un número, también buscamos coincidencia exacta por ID
+        if texto_busqueda.strip().isdigit():
+            query += """ AND (
+                id = ?
+                OR UPPER(nombre) LIKE ? OR UPPER(marca) LIKE ?
+                OR UPPER(modelo) LIKE ? OR UPPER(serial) LIKE ?
+            )"""
+            params.extend([int(texto_busqueda.strip()), term, term, term, term])
+        else:
+            query += " AND (UPPER(nombre) LIKE ? OR UPPER(marca) LIKE ? OR UPPER(modelo) LIKE ? OR UPPER(serial) LIKE ?)"
+            params.extend([term, term, term, term])
 
     cursor.execute(query, params)
     resultado = cursor.fetchall()
@@ -94,14 +120,15 @@ def obtener_custodio_actual(serial: str) -> str:
 def crear_activo(nombre, marca, modelo, serial, estado, mantenimiento) -> tuple[bool, str]:
     """
     Inserta un nuevo activo en la BD después de validar todos los campos.
-    Devuelve (True, "") si fue exitoso, (False, "mensaje") si algo falla.
+    Devuelve (True, "") si fue exitoso, (False, "mensaje de error") si algo falla.
+    Nunca lanza excepciones: todos los errores se devuelven como tupla.
     """
     # --- Normalización ---
-    nombre       = nombre.strip().upper()
-    marca        = marca.strip().upper()
-    modelo       = modelo.strip().upper()
-    serial       = serial.strip().upper()
-    estado       = estado.strip().upper()
+    nombre        = nombre.strip().upper()
+    marca         = marca.strip().upper()
+    modelo        = modelo.strip().upper()
+    serial        = serial.strip().upper()
+    estado        = estado.strip().upper()
     mantenimiento = mantenimiento.strip()
 
     # --- Campos obligatorios ---
@@ -110,18 +137,30 @@ def crear_activo(nombre, marca, modelo, serial, estado, mantenimiento) -> tuple[
 
     # --- Estado permitido ---
     if estado not in ESTADOS_VALIDOS:
-        return False, f"Estado no válido. Los estados permitidos son: {', '.join(ESTADOS_VALIDOS)}."
+        return False, f"Estado no válido. Los estados permitidos son: {', '.join(sorted(ESTADOS_VALIDOS))}."
 
-    # --- Fecha de mantenimiento ---
-    if mantenimiento:
-        fecha_ok, msg_fecha = _es_fecha_valida(mantenimiento)
-        if not fecha_ok:
-            return False, msg_fecha
+    # --- Fecha de próxima revisión: debe existir y no estar en el pasado ---
+    if not mantenimiento:
+        return False, "La fecha de próxima revisión es obligatoria."
 
-    # --- Inserción con control de serial duplicado ---
+    fecha_fmt_ok, msg_fmt = _es_fecha_valida(mantenimiento)
+    if not fecha_fmt_ok:
+        return False, msg_fmt
+
+    fecha_futura_ok, msg_fut = _es_fecha_futura(mantenimiento)
+    if not fecha_futura_ok:
+        return False, msg_fut
+
+    # --- Verificar serial duplicado ANTES del INSERT ---
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM equipos WHERE UPPER(serial) = ?", (serial,))
+    if cursor.fetchone():
+        conn.close()
+        return False, f"El serial '{serial}' ya existe en el inventario. Cada activo debe tener un serial único."
+
+    # --- Inserción ---
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO equipos (nombre, marca, modelo, serial, estado, mantenimiento)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -132,6 +171,8 @@ def crear_activo(nombre, marca, modelo, serial, estado, mantenimiento) -> tuple[
 
     except sqlite3.IntegrityError:
         conn.close()
+        # Segunda línea de defensa: si por alguna condición de carrera el
+        # serial se insertó entre nuestra verificación y el INSERT.
         return False, f"El serial '{serial}' ya existe en el inventario. Cada activo debe tener un serial único."
 
 
