@@ -1,29 +1,3 @@
-"""
-controllers/auth_controller.py
--------------------------------
-Controlador de Autenticación. Gestiona el ciclo completo de sesión:
-login, cambio de contraseña obligatorio y cierre de sesión.
-
-No importa ni usa ningún widget de interfaz gráfica.
-Devuelve tuplas (bool, str) que la Vista interpreta y muestra al usuario.
-
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
-"""
-
-import models.user as user_model
-import models.history as history_model
-
-
-class AuthController:
-    """
-    Mantiene el estado de la sesión activa: usuario logueado y su rol.
-    Una sola instancia de esta clase viaja de la LoginView al DashboardView.
-    """
-
-    def __init__(self):
-        self.usuario_actual = "SISTEMA"
-        self.rol_actual = ""
 
     # ------------------------------------------------------------------
     # Autenticación
