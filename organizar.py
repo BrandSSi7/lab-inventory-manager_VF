@@ -1,7 +1,6 @@
 import os
 import shutil
 
-# Detecta automáticamente la carpeta donde está guardado este script
 directorio_base = os.path.dirname(os.path.abspath(__file__))
 
 carpetas = ['models', 'controllers', 'views']
