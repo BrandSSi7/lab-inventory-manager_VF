@@ -3,7 +3,7 @@ views/login_view.py
 --------------------
 Vista de autenticación. Contiene tres pantallas en una sola ventana:
   1. Formulario de login principal.
-  2. Modal de cambio de contraseña obligatorio (primer ingreso).
+  2. Modal de cambio de contraseña (primer ingreso).
   3. Modal de recuperación de cuenta por preguntas de seguridad.
 
 Toda lógica real está delegada al AuthController.
