@@ -14,8 +14,8 @@ Este sistema es el resultado de un esfuerzo conjunto bajo un modelo de desarroll
 | Desarrollador | Responsabilidades |
 | :--- | :--- |
 | **Brandon Pérez** | Arquitectura MVC, Capa de Autenticación y Ensamble del Core. |
-| **Edwin Urbina** | Lógica de negocio para Préstamos y Gestión de Activos. |
-| **Andrea Useche** | Diseño de Vistas de Usuario y optimización de formularios (UX). |
+| **Andrea Useche** | Lógica de negocio para Préstamos y Gestión de Activos. |
+| **Edwin Urbina** | Diseño de Vistas de Usuario y optimización de formularios (UX). |
 | **Yorman Blanco** | Sistema de Auditoría (Logs) y Gestión de Incidencias/Alarmas. |
 
 ## 🚀 Instalación y Ejecución
