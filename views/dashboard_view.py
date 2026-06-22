@@ -1,3 +1,4 @@
+
 """
 views/dashboard_view.py
 ------------------------
@@ -118,22 +119,24 @@ class DashboardView(ctk.CTk):
             lbl.pack(pady=(3, 0), anchor="center")
             self._lbl_sidebar[id_mod] = lbl
 
-        # Botón de cierre de sesión al fondo del sidebar
+        # Contenedor fijo al fondo: usuario + cerrar sesión juntos y sin solaparse
+        footer = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        footer.pack(side="bottom", fill="x", padx=10, pady=(0, 12))
+
+        ctk.CTkLabel(
+            footer,
+            text=f"{self.auth.usuario_actual}\n{self.auth.rol_actual.split()[0].title()}",
+            font=font_small(), text_color=TXT_MUTED,
+            justify="center", wraplength=100
+        ).pack(pady=(0, 10))
+
         ctk.CTkButton(
-            self.sidebar, text="Cerrar sesión",
+            footer, text="Cerrar sesión",
             font=font_small(), height=36,
             fg_color="#DC2626", hover_color="#B91C1C",
             text_color="white", corner_radius=BTN_RADIUS,
             command=self._cerrar_sesion
-        ).pack(side="bottom", pady=20, padx=10, fill="x")
-
-        # Indicador del usuario activo
-        ctk.CTkLabel(
-            self.sidebar,
-            text=f"{self.auth.usuario_actual}\n{self.auth.rol_actual.split()[0].title()}",
-            font=font_small(), text_color=TXT_MUTED,
-            justify="center", wraplength=100
-        ).pack(side="bottom", pady=(0, 6))
+        ).pack(fill="x")
 
     def _construir_area_principal(self):
         """Frame contenedor del lado derecho. Los módulos se montan aquí."""
@@ -279,4 +282,5 @@ class DashboardView(ctk.CTk):
         ctk.set_appearance_mode(nuevo)
         self.actualizar_estilo_treeview()
         self._actualizar_resaltado_sidebar()
-        return nuevo  # Los módulos lo usan para cambiar el ícono del botón
+        return nuevo
+
