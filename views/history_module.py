@@ -243,4 +243,4 @@ class HistoryModule(ctk.CTkFrame):
     def _aplicar_colores_filas(self):
         es_oscuro = ctk.get_appearance_mode() == "Dark"
         self.tree.tag_configure("par",   background=BG_DARK_CARD if es_oscuro else BG_LIGHT_CARD)
-        self.tree.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9")
+        self.tree.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9") 
