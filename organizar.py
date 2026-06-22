@@ -18,7 +18,7 @@ mapa_archivos = {
     ]
 }
 
-print("Iniciando construcción de la Catedral Digital... 🏗️\n")
+print("Iniciando construcción de la Catedral Digital...\n")
 
 for carpeta in carpetas:
     ruta_carpeta = os.path.join(directorio_base, carpeta)
