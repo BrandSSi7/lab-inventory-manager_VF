@@ -4,7 +4,7 @@ database.py
 Módulo de inicialización de la base de datos SQLite para Lab-Inventory Manager.
 Se encarga únicamente de crear las tablas y la conexión compartida.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática - 3er Semestre
 Proyecto: Xorte - Lab Inventory Manager
 """
 
