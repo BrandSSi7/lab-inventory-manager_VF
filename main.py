@@ -7,7 +7,7 @@ Se encarga de:
   2. Lanzar la ventana de login.
   3. Controlar el ciclo de sesión: login → dashboard → logout → login.
 
-Autores: Equipo de Ingeniería Informática - 
+Autores: Equipo de Ingeniería Informática - 3er semestre
 Proyecto: Xorte - Lab Inventory Manager
 """
 
