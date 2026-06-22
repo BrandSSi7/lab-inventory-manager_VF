@@ -13,7 +13,7 @@ from datetime import datetime
 from database import get_connection
 
 
-# Criterios válidos de ordenamiento para la vista del historial
+
 ORDENES_VALIDOS = {
     "Más Recientes":  "ORDER BY id DESC",
     "Más Antiguos":   "ORDER BY id ASC",
