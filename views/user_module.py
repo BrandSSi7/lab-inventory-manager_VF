@@ -1,3 +1,4 @@
+
 """
 views/user_module.py
 ---------------------
@@ -394,6 +395,20 @@ class EditarUsuarioModal(ctk.CTkToplevel):
             "rol":       self._construir_rol_final(),
         }
 
+        # Defensa en profundidad — capa Vista: validar formato de identificación
+        # antes de abrir el diálogo de confirmación para no interrumpir un flujo
+        # ya confirmado con un error que pudo detectarse antes.
+        cedula = datos["cedula"]
+        if not cedula.isdigit() or len(cedula) < 3:
+            messagebox.showerror(
+                "Identificación inválida",
+                "La identificación solo puede contener números y debe tener al menos 3 dígitos.\n"
+                "Ejemplo correcto: 12345678",
+                parent=self
+            )
+            self.ent_cedula.focus_set()
+            return
+
         confirmar = messagebox.askyesno(
             "Confirmar cambios",
             f"¿Guardar los cambios en el perfil de '{datos['nombres']}'?",
@@ -434,3 +449,4 @@ class EditarUsuarioModal(ctk.CTkToplevel):
             messagebox.showinfo("Reset exitoso", msg, parent=self)
         else:
             messagebox.showerror("Error", msg, parent=self)
+
