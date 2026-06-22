@@ -7,7 +7,7 @@ Controla el ciclo completo: asignación, modificación y cierre de préstamos.
 Las búsquedas soportan filtrado por fecha, serial, modelo y tipo de activo,
 corrigiendo la limitación del buscador original.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Informática 
 Proyecto: Xorte - Lab Inventory Manager
 """
 
