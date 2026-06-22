@@ -2,13 +2,13 @@
 
 Sistema de gestión de inventario para UNEXCA desarrollado bajo una arquitectura **MVC (Modelo-Vista-Controlador)** robusta, diseñada para garantizar la escalabilidad, mantenibilidad y seguridad de los activos tecnológicos.
 
-## 🏛️ Arquitectura del Sistema
+## Arquitectura del Sistema
 El proyecto está estructurado para separar estrictamente las responsabilidades:
 - **Models:** Lógica de negocio, validaciones y acceso a datos (SQLite).
 - **Controllers:** Gestión de flujo y comunicación entre modelos y vistas.
 - **Views:** Interfaz de usuario moderna basada en `customtkinter`.
 
-## 👥 Equipo de Desarrollo
+## Equipo de Desarrollo
 Este sistema es el resultado de un esfuerzo conjunto bajo un modelo de desarrollo modular:
 
 | Desarrollador | Responsabilidades |
@@ -18,7 +18,7 @@ Este sistema es el resultado de un esfuerzo conjunto bajo un modelo de desarroll
 | **Edwin Urbina** | Diseño de Vistas de Usuario y optimización de formularios (UX). |
 | **Yorman Blanco** | Sistema de Auditoría (Logs) y Gestión de Incidencias/Alarmas. |
 
-## 🚀 Instalación y Ejecución
+## Instalación y Ejecución
 
 1. **Requisitos:**
    - Python 3.10 o superior.
