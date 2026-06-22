@@ -7,7 +7,7 @@ en SQLite: consultas, inserciones, actualizaciones y eliminaciones.
 Toda validación de datos ocurre AQUÍ, antes de tocar la base de datos.
 El controlador solo recibe (True, "") o (False, "mensaje de error").
 
-Autores: Equipo de Informática - 3er Semestre
+Autores: Equipo de Informática 
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -19,7 +19,7 @@ from database import get_connection, DB_NAME
 
 
 # ---------------------------------------------------------------------------
-# Funciones de validación de datos (sin efectos secundarios)
+# Funciones de validación de datos 
 # ---------------------------------------------------------------------------
 
 def _es_cedula_valida(cedula: str) -> bool:
@@ -98,7 +98,7 @@ def _respuestas_son_distintas(a1: str, a2: str, a3: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Funciones del modelo (CRUD con validación integrada)
+# Funciones del modelo 
 # ---------------------------------------------------------------------------
 
 def validar_login(username: str, password: str) -> bool:
