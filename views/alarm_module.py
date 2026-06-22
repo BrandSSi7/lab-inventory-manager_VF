@@ -76,7 +76,7 @@ class AlarmModule(ctk.CTkFrame):
             command=self._limpiar_filtros
         ).pack(side="left")
 
-        # Contador de alarmas activas
+      
         self.lbl_contador = ctk.CTkLabel(
             toolbar, text="",
             font=font_small(), text_color="#EF4444"
@@ -156,7 +156,7 @@ class AlarmModule(ctk.CTkFrame):
             tag = "par" if i % 2 == 0 else "impar"
             self.tree.insert("", "end", values=fila, tags=(tag,))
 
-        # Actualizar el contador en la toolbar
+        
         n = len(alarmas)
         self.lbl_contador.configure(
             text=f"⚠  {n} incidencia{'s' if n != 1 else ''} activa{'s' if n != 1 else ''}"
@@ -180,7 +180,7 @@ class AlarmModule(ctk.CTkFrame):
             )
             return
         valores = self.tree.item(seleccion[0])["values"]
-        # valores[0] = id_activo, valores[1] = nombre_equipo
+       
         AtenderAlarmaModal(self, self.ctrl, valores[0], valores[1], self._cargar_datos)
 
     # ------------------------------------------------------------------
@@ -210,8 +210,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         self.nombre_equipo = nombre_equipo
         self.on_saved     = on_saved
 
-        # Obtener el custodio actual del equipo para mostrarlo en el modal
-        # Buscamos el serial primero a través del controlador
+        
         self.custodio = self.ctrl.obtener_custodio(self._obtener_serial())
 
         self.title(f"Atender incidencia — ID {id_activo}")
@@ -227,7 +226,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         activos = self.ctrl.obtener_activos()
         for a in activos:
             if a[0] == self.id_activo:
-                return a[4]  # índice 4 = serial
+                return a[4]  
         return ""
 
     def _construir_ui(self):
@@ -239,7 +238,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         frame = ctk.CTkFrame(self, fg_color="transparent")
         frame.pack(fill="both", expand=True, padx=22, pady=5)
 
-        # Información del activo
+        
         ctk.CTkLabel(
             frame,
             text=f"Activo: {self.nombre_equipo}",
@@ -252,7 +251,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
             font=font_small(), text_color=TXT_MUTED
         ).pack(anchor="w", pady=(0, 18))
 
-        # Nueva fecha de revisión con autocompletado
+        
         ctk.CTkLabel(
             frame, text="Nueva fecha de próxima revisión:",
             font=font_small(), text_color=TXT_MUTED
@@ -263,11 +262,11 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT
         )
         self.ent_fecha.pack(pady=(3, 16))
-        # Sugerir 30 días hacia adelante como fecha por defecto
+        
         self.ent_fecha.insert(0, (datetime.now() + timedelta(days=30)).strftime("%d/%m/%Y"))
         self.ent_fecha.bind("<KeyRelease>", self._autocompletar_fecha)
 
-        # Nuevo estado del equipo
+        
         ctk.CTkLabel(
             frame, text="Actualizar estado del activo:",
             font=font_small(), text_color=TXT_MUTED
