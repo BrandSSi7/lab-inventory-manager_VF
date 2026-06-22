@@ -24,7 +24,7 @@ for carpeta in carpetas:
     ruta_carpeta = os.path.join(directorio_base, carpeta)
     os.makedirs(ruta_carpeta, exist_ok=True)
     open(os.path.join(ruta_carpeta, '__init__.py'), 'a').close()
-    print(f"📁 Carpeta y módulo listos: {carpeta}/")
+    print(f"Carpeta y módulo listos: {carpeta}/")
 
 print("-" * 40)
 
@@ -37,10 +37,10 @@ for carpeta, lista in mapa_archivos.items():
         
         if os.path.exists(ruta_origen):
             shutil.move(ruta_origen, ruta_destino)
-            print(f"✅ Movido: {archivo}  -->  {carpeta}/")
+            print(f"Movido: {archivo}  -->  {carpeta}/")
             archivos_movidos += 1
         else:
-            print(f"⚠️ No encontrado: {archivo}")
+            print(f"No encontrado: {archivo}")
 
 print("-" * 40)
-print(f"🚀 ¡Estructura MVC completada! Se movieron {archivos_movidos} archivos.")
+print(f"Estructura MVC completada! Se movieron {archivos_movidos} archivos.")
