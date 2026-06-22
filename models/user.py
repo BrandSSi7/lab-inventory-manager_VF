@@ -7,7 +7,7 @@ en SQLite: consultas, inserciones, actualizaciones y eliminaciones.
 Toda validación de datos ocurre AQUÍ, antes de tocar la base de datos.
 El controlador solo recibe (True, "") o (False, "mensaje de error").
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Informática - 3er Semestre
 Proyecto: Xorte - Lab Inventory Manager
 """
 
