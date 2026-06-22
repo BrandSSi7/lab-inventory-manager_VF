@@ -19,7 +19,7 @@ ESTADOS_VALIDOS = {"OPERATIVO", "MANTENIMIENTO", "ASIGNADO", "INACTIVO"}
 
 
 # ---------------------------------------------------------------------------
-# Funciones de validación (sin efectos secundarios)
+# Funciones de validación 
 # ---------------------------------------------------------------------------
 
 def _es_fecha_valida(fecha_str: str) -> tuple[bool, str]:
@@ -52,7 +52,7 @@ def _es_fecha_futura(fecha_str: str) -> tuple[bool, str]:
 
 
 # ---------------------------------------------------------------------------
-# Funciones del modelo (CRUD)
+# Funciones del modelo 
 # ---------------------------------------------------------------------------
 
 def obtener_todos(texto_busqueda: str = "", filtro_estado: str = "ALL") -> list:
@@ -119,8 +119,8 @@ def obtener_custodio_actual(serial: str) -> str:
 
 def crear_activo(nombre, marca, modelo, serial, estado, mantenimiento) -> tuple[bool, str]:
     """
-    Inserta un nuevo activo en la BD después de validar todos los campos.
-    Devuelve (True, "") si fue exitoso, (False, "mensaje de error") si algo falla.
+    Inserta un nuevo activo en la BD despues de validar todos los campos.
+    Devuelve (True, "exitoso") si fue exitoso, (False, "mensaje de error") si algo falla.
     Nunca lanza excepciones: todos los errores se devuelven como tupla.
     """
     # --- Normalización ---
@@ -288,7 +288,7 @@ def obtener_alarmas(texto_busqueda: str = "") -> list:
                 if fecha_obj <= hoy and estado.upper() != "MANTENIMIENTO REALIZADO":
                     tiene_alarma = True
                     motivo      = "REVISIÓN VENCIDA"
-                    descripcion = "EL CICLO ÚTIL OPERACIONAL HA EXPIRADO"
+                    descripcion = "FECHA VENCIDA"
             except ValueError:
                 pass  # Fecha mal formateada, ignoramos
 
@@ -296,7 +296,7 @@ def obtener_alarmas(texto_busqueda: str = "") -> list:
         if estado.upper() == "INACTIVO":
             tiene_alarma = True
             motivo      = "EQUIPO INACTIVO"
-            descripcion = "ACTIVO MARCADO COMO FUERA DE SERVICIO"
+            descripcion = "ACTIVO FUERA DE SERVICIO"
 
         if tiene_alarma:
             alarmas.append((id_eq, nombre, motivo, descripcion, modelo, fecha_mant, "CRÍTICA"))
