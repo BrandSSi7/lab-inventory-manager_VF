@@ -5,7 +5,7 @@ Modelo del Historial de Auditoría. Gestiona la tabla 'historial'.
 Es un modelo de solo-escritura/lectura: los registros nunca se editan
 ni se eliminan (principio de integridad de auditoría).
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática 
 Proyecto: Xorte - Lab Inventory Manager
 """
 
