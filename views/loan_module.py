@@ -1,3 +1,4 @@
+
 """
 views/loan_module.py
 ---------------------
@@ -66,7 +67,7 @@ class LoanModule(ctk.CTkFrame):
         self.ent_busqueda.bind("<KeyRelease>", lambda e: self._cargar_datos())
 
         self.combo_filtro = ctk.CTkComboBox(
-            toolbar, values=["ALL", "ASIGNADOS", "EN DEVOLUCIÓN"],
+            toolbar, values=["ALL", "ASIGNADOS", "EN DEVOLUCIÓN", "DEVUELTO"],
             width=160, height=34,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT,
             button_color=BG_INPUT, button_hover_color=ACCENT_HOVER,
