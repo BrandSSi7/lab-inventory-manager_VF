@@ -1,4 +1,5 @@
 
+
 """
 views/user_module.py
 ---------------------
@@ -245,7 +246,7 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         self.on_saved   = on_saved
         self.id_usuario = datos_usuario[0]
         # Guardamos el rol original para devolverlo intacto si el editor no es admin
-        self.rol_original = str(datos_usuario[7]) if len(datos_usuario) > 7 else "PRESTATARIO EXTERNO"
+        self.rol_original = str(datos_usuario[7]) if len(datos_usuario) > 7 else "PROPIETARIO"
 
         self.title(f"Editar perfil — ID {self.id_usuario}")
         self.geometry("430x680")
@@ -301,17 +302,17 @@ class EditarUsuarioModal(ctk.CTkToplevel):
             state=estado_chk
         )
         self.chk_operador = ctk.CTkCheckBox(
-            scroll, text="Operador de Laboratorio",
+            scroll, text="Operador de Inventario",
             fg_color=ACCENT_BLUE, text_color=TXT_MAIN,
             state=estado_chk
         )
-        self.chk_prestatario = ctk.CTkCheckBox(
-            scroll, text="Prestatario Externo",
+        self.chk_propietario = ctk.CTkCheckBox(
+            scroll, text="Propietario",
             fg_color=ACCENT_BLUE, text_color=TXT_MAIN,
             state=estado_chk
         )
 
-        for chk in (self.chk_admin, self.chk_operador, self.chk_prestatario):
+        for chk in (self.chk_admin, self.chk_operador, self.chk_propietario):
             chk.pack(anchor="w", padx=10, pady=5)
 
         # Nota visible para usuarios sin permisos de administración
@@ -328,8 +329,8 @@ class EditarUsuarioModal(ctk.CTkToplevel):
             self.chk_admin.select()
         if "OPERADOR" in rol_actual:
             self.chk_operador.select()
-        if "PRESTATARIO" in rol_actual:
-            self.chk_prestatario.select()
+        if "PROPIETARIO" in rol_actual:
+            self.chk_propietario.select()
 
         # Botones de acción (dentro del scroll = siempre visibles)
         ctk.CTkButton(
@@ -380,9 +381,9 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         if self.chk_admin.get():
             roles.append("ADMINISTRADOR EJECUTIVO")
         if self.chk_operador.get():
-            roles.append("OPERADOR DE LABORATORIO")
-        if self.chk_prestatario.get():
-            roles.append("PRESTATARIO EXTERNO")
+            roles.append("OPERADOR DE INVENTARIO")
+        if self.chk_propietario.get():
+            roles.append("PROPIETARIO")
         return " / ".join(roles) if roles else "SIN ACCESO"
 
     def _guardar(self):
@@ -449,4 +450,3 @@ class EditarUsuarioModal(ctk.CTkToplevel):
             messagebox.showinfo("Reset exitoso", msg, parent=self)
         else:
             messagebox.showerror("Error", msg, parent=self)
-
