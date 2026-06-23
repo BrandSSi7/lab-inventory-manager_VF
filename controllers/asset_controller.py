@@ -5,8 +5,6 @@ Controlador de Activos Tecnológicos. Intermediario entre la vista de inventario
 y el modelo asset.py. Gestiona incorporación, edición de estados, alarmas
 e importación masiva desde CSV.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager 
 """
 
 import csv
