@@ -6,9 +6,6 @@ login, cambio de contraseña obligatorio y cierre de sesión.
 
 No importa ni usa ningún widget de interfaz gráfica.
 Devuelve tuplas (bool, str) que la Vista interpreta y muestra al usuario.
-
-Autores: Equipo de Ingeniería Informática
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import models.user as user_model
