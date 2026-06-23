@@ -124,24 +124,31 @@ class AssetModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        anchos = {"id": 50, "nombre": 280, "marca": 120,
-                  "modelo": 130, "serial": 140, "estado": 130, "mantenimiento": 120}
+        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
+        ANCHO_COLUMNA = 231
         encabezados = {"id": "ID", "nombre": "Descripción del Activo",
                        "marca": "Fabricante", "modelo": "Modelo",
                        "serial": "Serial", "estado": "Estado",
                        "mantenimiento": "Próx. Revisión"}
 
         for col in cols:
-            self.tree.heading(col, text=encabezados[col], anchor="w")
-            self.tree.column(col, width=anchos[col], anchor="w",
-                             stretch=(col == "nombre"))
+            self.tree.heading(col, text=encabezados[col], anchor="center")
+            self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
 
         # Bloquear redimensión de columnas con el mouse
         self.tree.bind("<Button-1>",   self._bloquear_resize)
         self.tree.bind("<B1-Motion>",  self._bloquear_resize)
         self.tree.bind("<Double-1>",   lambda e: self._abrir_editar_estado())
 
-        self.tree.pack(side="left", fill="both", expand=True)
+        # PARCHE QA: el árbol y las dos barras de desplazamiento se ubican
+        # con grid() de forma consistente. Antes solo el árbol usaba pack()
+        # y ninguna barra llegaba a mostrarse, por lo que columnas que no
+        # entraban en el ancho visible (Estado, Próx. Revisión) quedaban
+        # inaccesibles sin ninguna forma de desplazarse hasta ellas.
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.scroll_y.grid(row=0, column=1, sticky="ns")
+        self.scroll_x.grid(row=1, column=0, sticky="ew")
+
         self._aplicar_colores_filas()
 
     def _construir_footer(self):
@@ -149,7 +156,7 @@ class AssetModule(ctk.CTkFrame):
         footer.grid(row=3, column=0, sticky="ew", pady=(16, 0))
 
         ctk.CTkButton(
-            footer, text="Sincronizar", width=100, height=BTN_H,
+            footer, text="Actualizar", width=100, height=BTN_H,
             fg_color=("#CBD5E1", "#4B5563"), hover_color=("#94A3B8", "#374151"),
             text_color=TXT_MAIN, corner_radius=BTN_RADIUS,
             command=self._cargar_datos
@@ -332,14 +339,14 @@ class IncorporarActivoModal(ctk.CTkToplevel):
         # Estado inicial: siempre OPERATIVO. No se expone como campo editable
         # porque CTkComboBox disabled no preserva el valor al llamar .get().
         # El valor "OPERATIVO" se inyecta directamente en _guardar().
-        ctk.CTkFrame(scroll, fg_color=BG_INPUT, corner_radius=6,
-                     border_width=1, border_color=BORDER_INPUT,
-                     height=INPUT_H).pack(fill="x", pady=6)
+        # PARCHE QA: se elimina el recuadro vacío decorativo que simulaba
+        # un campo deshabilitado sin contener ningún widget real; el texto
+        # informativo ya comunica la regla de negocio por sí solo.
         ctk.CTkLabel(
             scroll,
             text="Estado inicial: OPERATIVO  (solo modificable desde el inventario)",
             font=ctk.CTkFont(size=11), text_color=TXT_MUTED
-        ).pack(anchor="w", pady=(0, 4))
+        ).pack(anchor="w", pady=(10, 4))
 
         ctk.CTkLabel(scroll, text="LOGÍSTICA", font=font_small(),
                      text_color=ACCENT_BLUE).pack(anchor="w", pady=(14, 2))
@@ -578,4 +585,3 @@ class ExportarModal(ctk.CTkToplevel):
 
         messagebox.showinfo("Exportación exitosa", f"Archivo guardado en:\n{path}", parent=self)
         self.destroy()
-
