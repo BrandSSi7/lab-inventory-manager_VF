@@ -1,3 +1,4 @@
+
 """
 views/history_module.py
 ------------------------
@@ -10,7 +11,7 @@ Filtros disponibles:
   - Categoría: Todos | Equipos | Usuarios | Préstamos | Sistema
   - Orden: Más Recientes, Más Antiguos, A-Z por distintos campos
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -150,23 +151,29 @@ class HistoryModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        config = {
-            "id":          ("ID Log",            55,  False),
-            "accion":      ("Tipo de acción",   145,  False),
-            "referencia":  ("Activo / Ref.",    220,  True),
-            "responsable": ("Usuario ejecutivo",185,  True),
-            "fecha":       ("Fecha y hora",     155,  False),
-            "detalles":    ("Detalles",         290,  True),
+        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
+        ANCHO_COLUMNA = 189
+        encabezados = {
+            "id": "ID Log", "accion": "Tipo de acción",
+            "referencia": "Activo / Ref.", "responsable": "Usuario ejecutivo",
+            "fecha": "Fecha y hora", "detalles": "Detalles",
         }
-        for col, (texto, ancho, stretch) in config.items():
-            self.tree.heading(col, text=texto, anchor="w")
-            self.tree.column(col, width=ancho, anchor="w", stretch=stretch)
+        for col in cols:
+            self.tree.heading(col, text=encabezados[col], anchor="center")
+            self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
 
         # El historial es solo lectura: no hay doble clic para editar
         self.tree.bind("<Button-1>",  self._bloquear_resize)
         self.tree.bind("<B1-Motion>", self._bloquear_resize)
 
-        self.tree.pack(side="left", fill="both", expand=True)
+        # PARCHE QA: el árbol y las dos barras de desplazamiento se ubican
+        # con grid() de forma consistente. Antes solo el árbol usaba pack()
+        # y ninguna barra llegaba a mostrarse, por lo que columnas que no
+        # entraban en el ancho visible quedaban inaccesibles.
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.scroll_y.grid(row=0, column=1, sticky="ns")
+        self.scroll_x.grid(row=1, column=0, sticky="ew")
+
         self._aplicar_colores_filas()
 
     def _construir_footer(self):
@@ -174,7 +181,7 @@ class HistoryModule(ctk.CTkFrame):
         footer.grid(row=3, column=0, sticky="ew", pady=(16, 0))
 
         ctk.CTkButton(
-            footer, text="Sincronizar", width=100, height=BTN_H,
+            footer, text="Actualizar", width=100, height=BTN_H,
             fg_color=("#CBD5E1", "#4B5563"), hover_color=("#94A3B8", "#374151"),
             text_color=TXT_MAIN, corner_radius=BTN_RADIUS,
             command=self._cargar_datos
@@ -243,4 +250,5 @@ class HistoryModule(ctk.CTkFrame):
     def _aplicar_colores_filas(self):
         es_oscuro = ctk.get_appearance_mode() == "Dark"
         self.tree.tag_configure("par",   background=BG_DARK_CARD if es_oscuro else BG_LIGHT_CARD)
-        self.tree.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9") 
+        self.tree.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9")
+
