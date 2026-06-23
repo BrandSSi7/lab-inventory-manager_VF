@@ -3,13 +3,13 @@ views/login_view.py
 --------------------
 Vista de autenticación. Contiene tres pantallas en una sola ventana:
   1. Formulario de login principal.
-  2. Modal de cambio de contraseña (primer ingreso).
+  2. Modal de cambio de contraseña obligatorio (primer ingreso).
   3. Modal de recuperación de cuenta por preguntas de seguridad.
 
 Toda lógica real está delegada al AuthController.
 Esta vista solo captura inputs y muestra resultados.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -102,9 +102,7 @@ class LoginView(ctk.CTk):
         lbl_recuperar.pack(pady=3)
         lbl_recuperar.bind("<Button-1>", lambda e: self._abrir_recuperacion())
 
-    # ------------------------------------------------------------------
     # Acciones
-    # ------------------------------------------------------------------
 
     def _intentar_login(self):
         username = self.ent_usuario.get().strip()
@@ -131,9 +129,7 @@ class LoginView(ctk.CTk):
         RecuperacionModal(self, self.auth)
 
 
-# ------------------------------------------------------------------
 # Modal: Cambio de contraseña obligatorio en primer ingreso
-# ------------------------------------------------------------------
 
 class CambiarPasswordModal(ctk.CTkToplevel):
     """
@@ -208,9 +204,7 @@ class CambiarPasswordModal(ctk.CTkToplevel):
         self.on_success()
 
 
-# ------------------------------------------------------------------
 # Modal: Recuperación de cuenta por preguntas de seguridad
-# ------------------------------------------------------------------
 
 class RecuperacionModal(ctk.CTkToplevel):
     """
@@ -376,3 +370,4 @@ class RecuperacionModal(ctk.CTkToplevel):
             self.destroy()
         else:
             messagebox.showerror("Verificación fallida", resultado, parent=self)
+
