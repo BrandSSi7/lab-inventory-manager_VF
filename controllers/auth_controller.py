@@ -7,7 +7,7 @@ login, cambio de contraseña obligatorio y cierre de sesión.
 No importa ni usa ningún widget de interfaz gráfica.
 Devuelve tuplas (bool, str) que la Vista interpreta y muestra al usuario.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -24,10 +24,8 @@ class AuthController:
     def __init__(self):
         self.usuario_actual = "SISTEMA"
         self.rol_actual = ""
-        
-    # ------------------------------------------------------------------
+
     # Autenticación
-    # ------------------------------------------------------------------
 
     def intentar_login(self, username: str, password: str) -> tuple[bool, str]:
         """
@@ -108,9 +106,7 @@ class AuthController:
         self.usuario_actual = "SISTEMA"
         self.rol_actual = ""
 
-    # ------------------------------------------------------------------
     # Recuperación de contraseña
-    # ------------------------------------------------------------------
 
     def buscar_cuenta_recuperacion(self, busqueda: str):
         """
@@ -158,9 +154,7 @@ class AuthController:
         )
         return False, "Una o más respuestas no coinciden con los registros del sistema."
 
-    # ------------------------------------------------------------------
     # Helpers de sesión (usados por la Vista para adaptar la UI al rol)
-    # ------------------------------------------------------------------
 
     def es_administrador(self) -> bool:
         """Devuelve True si el usuario activo tiene rol de Administrador Ejecutivo."""
