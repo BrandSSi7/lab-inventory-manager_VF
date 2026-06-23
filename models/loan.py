@@ -1,14 +1,10 @@
 """
 models/loan.py
 --------------
-Modelo de Préstamos. Gestiona la tabla 'prestamos' en SQLite.
+Préstamos. Gestiona la tabla 'prestamos' en la base de datos.
 Controla el ciclo completo: asignación, modificación y cierre de préstamos.
 
-Las búsquedas soportan filtrado por fecha, serial, modelo y tipo de activo,
-corrigiendo la limitación del buscador original.
-
-Autores: Equipo de Informática 
-Proyecto: Xorte - Lab Inventory Manager
+Las búsquedas soportan filtrado por fecha, serial, modelo y tipo de activo.
 """
 
 import sqlite3
@@ -36,8 +32,7 @@ def _es_fecha_valida(fecha_str: str) -> tuple[bool, str]:
 
 def _fecha_devolucion_es_futura(fecha_devolucion: str) -> bool:
     """
-    Verifica que la fecha de devolución sea ESTRICTAMENTE posterior a hoy.
-    Una devolución para hoy mismo no se acepta: debe ser al menos mañana.
+    Verifica que la fecha de devolución sea posterior a hoy.
     """
     fd = datetime.strptime(fecha_devolucion, "%d/%m/%Y")
     return fd.date() > datetime.now().date()
@@ -177,7 +172,7 @@ def registrar_prestamo(id_activo: int, prestatario: str,
 def actualizar_prestamo(id_prestamo: int, nueva_fecha_devolucion: str,
                         nuevo_estado: str) -> tuple[bool, str]:
     """
-    Modifica la fecha de devolución y/o el estado de un préstamo existente.
+    Modifica la fecha de devolución y tambien puede el estado de un préstamo existente.
     Devuelve (True, nombre_equipo) o (False, "mensaje de error").
     """
     nueva_fecha_devolucion = nueva_fecha_devolucion.strip()
@@ -218,8 +213,7 @@ def devolver_prestamo(id_prestamo: int) -> tuple[bool, str]:
       2. Busca el serial del equipo en el préstamo.
       3. Actualiza el estado del equipo a 'OPERATIVO' en la tabla equipos.
 
-    Si cualquier paso falla, hace rollback de todo (atomicidad garantizada).
-    Devuelve (True, nombre_equipo) o (False, "mensaje de error").
+    Si cualquier paso falla, Devuelve (True, nombre_equipo) o (False, "mensaje de error").
     """
     conn = get_connection()
     cursor = conn.cursor()
