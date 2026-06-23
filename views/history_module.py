@@ -47,9 +47,7 @@ class HistoryModule(ctk.CTkFrame):
         self._construir_footer()
         self._cargar_datos()
 
-    # ------------------------------------------------------------------
     # Construcción de la UI
-    # ------------------------------------------------------------------
 
     def _construir_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -201,9 +199,7 @@ class HistoryModule(ctk.CTkFrame):
             font=font_small(), text_color=TXT_MUTED
         ).pack(side="right")
 
-    # ------------------------------------------------------------------
     # Carga de datos
-    # ------------------------------------------------------------------
 
     def _cargar_datos(self):
         busqueda  = self.ent_busqueda.get().strip()
@@ -231,17 +227,13 @@ class HistoryModule(ctk.CTkFrame):
         self.combo_orden.set("Más Recientes")
         self._cargar_datos()
 
-    # ------------------------------------------------------------------
     # Exportación
-    # ------------------------------------------------------------------
 
     def _exportar(self):
         from views.asset_module import ExportarModal
         ExportarModal(self, self.tree, "Historial")
 
-    # ------------------------------------------------------------------
     # Helpers visuales
-    # ------------------------------------------------------------------
 
     def _bloquear_resize(self, event):
         if self.tree.identify_region(event.x, event.y) == "separator":
