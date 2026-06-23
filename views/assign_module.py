@@ -7,7 +7,7 @@ UserController. No hay campos de texto libre para el prestatario.
 
 Layout: tabla de equipos operativos (izquierda) + formulario de asignación (derecha).
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -43,9 +43,7 @@ class AssignModule(ctk.CTkFrame):
         self._cargar_equipos_disponibles()
         self._recargar_combo_prestatarios()
 
-    # ------------------------------------------------------------------
     # Construcción de la UI
-    # ------------------------------------------------------------------
 
     def _construir_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -183,9 +181,7 @@ class AssignModule(ctk.CTkFrame):
             command=self._procesar_prestamo
         ).pack(fill="x", pady=(0, 8))
 
-    # ------------------------------------------------------------------
     # Carga de datos
-    # ------------------------------------------------------------------
 
     def _cargar_equipos_disponibles(self):
         for item in self.tree_equipos.get_children():
@@ -209,9 +205,7 @@ class AssignModule(ctk.CTkFrame):
         else:
             self.combo_prestatario.set("")
 
-    # ------------------------------------------------------------------
     # Acciones
-    # ------------------------------------------------------------------
 
     def _procesar_prestamo(self):
         seleccion = self.tree_equipos.selection()
@@ -270,9 +264,7 @@ class AssignModule(ctk.CTkFrame):
         self.ent_ubicacion.delete(0, tk.END)
         self.ent_observacion.delete(0, tk.END)
 
-    # ------------------------------------------------------------------
     # Helpers visuales
-    # ------------------------------------------------------------------
 
     def _autocompletar(self, campo: ctk.CTkEntry, event):
         """Inserta '/' en las posiciones 2 y 4 al escribir una fecha."""
@@ -292,7 +284,3 @@ class AssignModule(ctk.CTkFrame):
         self.tree_equipos.tag_configure("par",   background=BG_DARK_CARD if es_oscuro else BG_LIGHT_CARD)
         self.tree_equipos.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9")
 
-
-# RegistroRapidoModal fue eliminado intencionalmente en la revisión QA.
-# El módulo de asignación ya NO permite dar de alta usuarios nuevos.
-# Para registrar un prestatario, usar el módulo de Usuarios desde el sidebar.
