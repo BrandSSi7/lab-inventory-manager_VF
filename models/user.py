@@ -2,14 +2,11 @@
 """
 models/user.py
 --------------
-Modelo de Usuarios. Gestiona toda la interacción con la tabla 'usuarios'
+Modelo de Usuarios, Gestiona toda la interacción con la tabla 'usuarios'
 en SQLite: consultas, inserciones, actualizaciones y eliminaciones.
 
 Toda validación de datos ocurre AQUÍ, antes de tocar la base de datos.
 El controlador solo recibe (True, "") o (False, "mensaje de error").
-
-Autores: Equipo de Ingeniería Informática
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import sqlite3
@@ -23,9 +20,6 @@ from database import get_connection, DB_NAME
 def _es_cedula_valida(cedula: str) -> bool:
     """
     Valida que la cédula contenga únicamente dígitos (0-9).
-    La generación automática de identificadores externos (formato "EXT-N",
-    ver crear_usuario_rapido) no pasa por esta validación: es una operación
-    interna del sistema, no una entrada manual del operador.
     """
     return cedula.isdigit() and len(cedula) >= 3
 
@@ -42,7 +36,7 @@ def _es_correo_valido(correo: str) -> bool:
 def _es_telefono_valido(telefono: str) -> bool:
     """
     Valida que el teléfono contenga solo dígitos numéricos.
-    Mínimo 7 dígitos para ser razonable.
+    Mínimo 7 dígitos
     """
     return telefono.isdigit() and len(telefono) >= 7
 
