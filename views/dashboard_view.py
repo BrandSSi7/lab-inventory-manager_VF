@@ -75,8 +75,12 @@ class DashboardView(ctk.CTk):
         self._construir_area_principal()
         self._configurar_estilo_treeview()
 
-        # Abrir el primer módulo por defecto
-        self._navegar("equipos")
+        # Abrir por defecto el primer módulo permitido para el rol activo
+        # PARCHE QA: antes navegaba siempre a "equipos", inaccesible para
+        # roles como PROPIETARIO.
+        modulos_disponibles = self.auth.modulos_permitidos()
+        if modulos_disponibles:
+            self._navegar(modulos_disponibles[0])
 
     # ------------------------------------------------------------------
     # Construcción de la UI base
@@ -98,6 +102,12 @@ class DashboardView(ctk.CTk):
         self._lbl_sidebar = {}
 
         for id_mod, emoji, etiqueta in MENU_ITEMS:
+            # PARCHE QA: Control de Acceso Basado en Roles (RBAC).
+            # Si el rol de la sesión activa no tiene permiso para este módulo,
+            # ni siquiera se construye el botón correspondiente.
+            if not self.auth.tiene_acceso_modulo(id_mod):
+                continue
+
             contenedor = ctk.CTkFrame(self.sidebar, fg_color="transparent")
             contenedor.pack(pady=10, fill="x", padx=10)
 
@@ -119,24 +129,22 @@ class DashboardView(ctk.CTk):
             lbl.pack(pady=(3, 0), anchor="center")
             self._lbl_sidebar[id_mod] = lbl
 
-        # Contenedor fijo al fondo: usuario + cerrar sesión juntos y sin solaparse
-        footer = ctk.CTkFrame(self.sidebar, fg_color="transparent")
-        footer.pack(side="bottom", fill="x", padx=10, pady=(0, 12))
-
-        ctk.CTkLabel(
-            footer,
-            text=f"{self.auth.usuario_actual}\n{self.auth.rol_actual.split()[0].title()}",
-            font=font_small(), text_color=TXT_MUTED,
-            justify="center", wraplength=100
-        ).pack(pady=(0, 10))
-
+        # Botón de cierre de sesión al fondo del sidebar
         ctk.CTkButton(
-            footer, text="Cerrar sesión",
+            self.sidebar, text="Cerrar sesión",
             font=font_small(), height=36,
             fg_color="#DC2626", hover_color="#B91C1C",
             text_color="white", corner_radius=BTN_RADIUS,
             command=self._cerrar_sesion
-        ).pack(fill="x")
+        ).pack(side="bottom", pady=20, padx=10, fill="x")
+
+        # Indicador del usuario activo
+        ctk.CTkLabel(
+            self.sidebar,
+            text=f"{self.auth.usuario_actual}\n{self.auth.rol_actual.split()[0].title()}",
+            font=font_small(), text_color=TXT_MUTED,
+            justify="center", wraplength=100
+        ).pack(side="bottom", pady=(0, 6))
 
     def _construir_area_principal(self):
         """Frame contenedor del lado derecho. Los módulos se montan aquí."""
@@ -156,6 +164,18 @@ class DashboardView(ctk.CTk):
         Destruye el módulo actual y monta el nuevo en el área principal.
         Importación diferida: cada módulo se importa solo cuando se necesita.
         """
+        # PARCHE QA: Control de Acceso Basado en Roles (RBAC).
+        # Aunque el botón esté oculto, esta verificación impide navegar al
+        # módulo por cualquier otra vía (por ejemplo, una llamada directa).
+        if not self.auth.tiene_acceso_modulo(id_modulo):
+            messagebox.showerror(
+                "Acceso denegado",
+                f"Tu rol ({self.auth.rol_actual}) no tiene permiso para "
+                f"acceder a este módulo.",
+                parent=self
+            )
+            return
+
         if self.modulo_activo == id_modulo:
             return  # Ya estamos aquí, nada que hacer
 
@@ -282,5 +302,4 @@ class DashboardView(ctk.CTk):
         ctk.set_appearance_mode(nuevo)
         self.actualizar_estilo_treeview()
         self._actualizar_resaltado_sidebar()
-        return nuevo
-
+        return nuevo  # Los módulos lo usan para cambiar el ícono del botón
