@@ -6,7 +6,7 @@ y el modelo user.py. Orquesta validaciones, persistencia y registro de auditorí
 
 Regla de oro: ninguna línea de este archivo toca CustomTkinter ni messagebox.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -44,9 +44,7 @@ class UserController:
         # Referencia al controlador de sesión para saber quién ejecuta cada acción
         self.auth = auth_controller
 
-    # ------------------------------------------------------------------
     # Lectura
-    # ------------------------------------------------------------------
 
     def obtener_usuarios(self, texto_busqueda: str = "") -> list:
         """Devuelve la lista de usuarios para poblar la tabla en la vista."""
@@ -59,9 +57,7 @@ class UserController:
         """
         return user_model.obtener_nombres_registrados()
 
-    # ------------------------------------------------------------------
     # Creación
-    # ------------------------------------------------------------------
 
     def registrar_usuario(self, datos: dict) -> tuple[bool, str]:
         """
@@ -128,9 +124,7 @@ class UserController:
 
         return exito, resultado
 
-    # ------------------------------------------------------------------
     # Actualización
-    # ------------------------------------------------------------------
 
     def actualizar_usuario(self, id_usuario: int, datos: dict) -> tuple[bool, str]:
         """
@@ -212,9 +206,7 @@ class UserController:
         )
         return True, f"Contraseña restablecida. El usuario '{username_afectado}' deberá crear una nueva clave en su próximo ingreso."
 
-    # ------------------------------------------------------------------
     # Eliminación
-    # ------------------------------------------------------------------
 
     def eliminar_usuario(self, id_usuario: int) -> tuple[bool, str]:
         """
@@ -237,3 +229,4 @@ class UserController:
             return True, f"El usuario '{nombre_o_error}' fue eliminado correctamente."
 
         return False, nombre_o_error
+
