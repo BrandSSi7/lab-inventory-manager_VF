@@ -3,11 +3,8 @@ controllers/user_controller.py
 -------------------------------
 Controlador de Usuarios. Intermediario entre la vista de gestión de personal
 y el modelo user.py. Orquesta validaciones, persistencia y registro de auditoría.
+Ninguna línea de este archivo toca CustomTkinter ni messagebox.
 
-Regla de oro: ninguna línea de este archivo toca CustomTkinter ni messagebox.
-
-Autores: Equipo de Ingeniería Informática
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import re
