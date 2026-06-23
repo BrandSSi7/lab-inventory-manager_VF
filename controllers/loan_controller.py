@@ -6,9 +6,6 @@ registro de nuevos préstamos, modificaciones, devoluciones y eliminaciones.
 
 Coordina los modelos loan.py, asset.py (para actualizar estados del equipo)
 y history.py (para auditoría).
-
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import models.loan    as loan_model
