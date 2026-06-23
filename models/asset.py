@@ -1,11 +1,8 @@
 """
 models/asset.py
 ---------------
-Modelo de Activos Tecnológicos. Gestiona la tabla 'equipos' en SQLite.
+El codigo permite ver el Modelo de Activos Tecnológicos. Gestiona la tabla 'equipos' en SQLite.
 Incluye validación de serial único, estados permitidos y fechas de mantenimiento.
-
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import sqlite3
