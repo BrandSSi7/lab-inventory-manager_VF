@@ -93,7 +93,7 @@ class LoanModule(ctk.CTkFrame):
         self.scroll_y = ttk.Scrollbar(contenedor, orient="vertical")
         self.scroll_x = ttk.Scrollbar(contenedor, orient="horizontal")
 
-        cols = ("id", "equipo", "serial", "prestatario", "fecha_p", "fecha_d", "estado")
+        cols = ("id", "equipo", "serial", "prestatario", "fecha_p", "fecha_d", "estado", "ubicacion")
         self.tree = ttk.Treeview(
             contenedor, columns=cols, show="headings",
             yscrollcommand=self.scroll_y.set,
@@ -102,24 +102,31 @@ class LoanModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        config = {
-            "id":          ("ID",                  55,  False),
-            "equipo":      ("Equipo",              240,  True),
-            "serial":      ("Serial",              140,  True),
-            "prestatario": ("Prestatario",         220,  True),
-            "fecha_p":     ("Fecha Préstamo",      140,  False),
-            "fecha_d":     ("Fecha Devolución",    140,  False),
-            "estado":      ("Estado",              120,  False),
+        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
+        ANCHO_COLUMNA = 191
+        encabezados = {
+            "id": "ID", "equipo": "Equipo", "serial": "Serial",
+            "prestatario": "Prestatario", "fecha_p": "Fecha Préstamo",
+            "fecha_d": "Fecha Devolución", "estado": "Estado",
+            "ubicacion": "Ubicación",
         }
-        for col, (texto, ancho, stretch) in config.items():
-            self.tree.heading(col, text=texto, anchor="w")
-            self.tree.column(col, width=ancho, anchor="w", stretch=stretch)
+        for col in cols:
+            self.tree.heading(col, text=encabezados[col], anchor="center")
+            self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
 
         self.tree.bind("<Button-1>",  self._bloquear_resize)
         self.tree.bind("<B1-Motion>", self._bloquear_resize)
         self.tree.bind("<Double-1>",  lambda e: self._abrir_modificar())
 
-        self.tree.pack(side="left", fill="both", expand=True)
+        # PARCHE QA: el árbol y las dos barras de desplazamiento se ubican
+        # con grid() de forma consistente. Antes solo el árbol usaba pack()
+        # y ninguna barra llegaba a mostrarse, por lo que las columnas que
+        # no entraban en el ancho visible (Estado, Ubicación) quedaban
+        # inaccesibles sin ninguna forma de desplazarse hasta ellas.
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.scroll_y.grid(row=0, column=1, sticky="ns")
+        self.scroll_x.grid(row=1, column=0, sticky="ew")
+
         self._aplicar_colores_filas()
 
     def _construir_footer(self):
@@ -217,6 +224,18 @@ class LoanModule(ctk.CTkFrame):
             messagebox.showerror("Error", msg, parent=self)
 
     def _abrir_modificar(self):
+        # PARCHE QA: solo Operadores de Laboratorio o Administradores pueden
+        # modificar fecha/estado de un préstamo.
+        if not self.auth.es_operador():
+            messagebox.showerror(
+                "Permiso denegado",
+                "Tu rol no tiene permiso para modificar préstamos.\n"
+                "Esta acción está reservada a Operadores de Laboratorio "
+                "y Administradores.",
+                parent=self
+            )
+            return
+
         seleccion = self.tree.selection()
         if not seleccion:
             messagebox.showinfo("Atención", "Selecciona un préstamo de la tabla primero.", parent=self)
@@ -225,6 +244,18 @@ class LoanModule(ctk.CTkFrame):
         ModificarPrestamoModal(self, self.ctrl, valores, self._cargar_datos)
 
     def _eliminar(self):
+        # PARCHE QA: solo Operadores de Laboratorio o Administradores pueden
+        # eliminar préstamos. Un Propietario no debe poder hacerlo.
+        if not self.auth.es_operador():
+            messagebox.showerror(
+                "Permiso denegado",
+                "Tu rol no tiene permiso para eliminar préstamos.\n"
+                "Esta acción está reservada a Operadores de Laboratorio "
+                "y Administradores.",
+                parent=self
+            )
+            return
+
         seleccion = self.tree.selection()
         if not seleccion:
             messagebox.showinfo("Atención", "Selecciona un préstamo de la tabla primero.", parent=self)
@@ -362,3 +393,4 @@ class ModificarPrestamoModal(ctk.CTkToplevel):
             self.destroy()
         else:
             messagebox.showerror("Error", msg, parent=self)
+
