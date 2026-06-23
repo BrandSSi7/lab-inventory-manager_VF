@@ -1,12 +1,8 @@
 """
 models/history.py
 -----------------
-Modelo del Historial de Auditoría. Gestiona la tabla 'historial'.
-Es un modelo de solo-escritura/lectura: los registros nunca se editan
-ni se eliminan (principio de integridad de auditoría).
-
-Autores: Equipo de Ingeniería Informática 
-Proyecto: Xorte - Lab Inventory Manager
+El codigo gestiona el modelo del Historial de Auditoría. Gestiona la tabla 'historial'.
+Es un modelo de solo-escritura/lectura
 """
 
 from datetime import datetime
@@ -28,7 +24,6 @@ def registrar(accion: str, referencia: str, responsable: str,
               detalles: str, categoria: str) -> None:
     """
     Inserta un nuevo registro en el historial de auditoría.
-    Esta función es llamada por todos los controladores después de cada operación.
     """
     fecha_hora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
