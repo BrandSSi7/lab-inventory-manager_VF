@@ -1,3 +1,4 @@
+
 """
 views/register_user_view.py
 ----------------------------
@@ -8,7 +9,7 @@ que el botón 'Guardar' sea siempre visible sin importar la resolución.
 Autocompletado de '/' en la fecha de nacimiento con evento <KeyRelease>.
 Validación de preguntas de seguridad distintas en tiempo real.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -80,7 +81,7 @@ class RegisterUserModal(ctk.CTkToplevel):
         ).pack(anchor="w", pady=(10, 2))
 
         self.ent_nombre   = entry("Nombres y apellidos")
-        self.ent_cedula   = entry("Cédula / Documento (ej: V-12345678)")
+        self.ent_cedula   = entry("Cédula / Documento (solo números, ej: 12345678)")
         self.ent_fnac     = entry("Fecha de nacimiento (DD/MM/AAAA)")
         self.ent_fnac.bind("<KeyRelease>", self._autocompletar_fecha)
         self.ent_correo   = entry("Correo electrónico")
@@ -180,6 +181,19 @@ class RegisterUserModal(ctk.CTkToplevel):
             "q3": self.combo_q3.get(), "a3": self.ent_a3.get().strip(),
         }
 
+        # Defensa en profundidad — capa Vista: validar formato de identificación
+        # antes de enviar al controlador para dar retroalimentación inmediata.
+        cedula = datos["cedula"]
+        if not cedula.isdigit() or len(cedula) < 3:
+            messagebox.showerror(
+                "Identificación inválida",
+                "La identificación solo puede contener números y debe tener al menos 3 dígitos.\n"
+                "Ejemplo correcto: 12345678",
+                parent=self
+            )
+            self.ent_cedula.focus_set()
+            return
+
         exito, msg = self.ctrl.registrar_usuario(datos)
 
         if not exito:
@@ -195,3 +209,5 @@ class RegisterUserModal(ctk.CTkToplevel):
         if self.on_saved:
             self.on_saved()
         self.destroy()
+
+
