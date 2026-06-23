@@ -1,3 +1,4 @@
+
 """
 models/user.py
 --------------
@@ -7,7 +8,7 @@ en SQLite: consultas, inserciones, actualizaciones y eliminaciones.
 Toda validación de datos ocurre AQUÍ, antes de tocar la base de datos.
 El controlador solo recibe (True, "") o (False, "mensaje de error").
 
-Autores: Equipo de Informática 
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -17,19 +18,16 @@ from datetime import datetime
 
 from database import get_connection, DB_NAME
 
-
-# ---------------------------------------------------------------------------
-# Funciones de validación de datos 
-# ---------------------------------------------------------------------------
+# Funciones de validación de datos
 
 def _es_cedula_valida(cedula: str) -> bool:
     """
-    Valida que la cédula sea alfanumérica.
-    Acepta formatos como: V-12345678, E-1234567, 12345678, EXT-001.
+    Valida que la cédula contenga únicamente dígitos (0-9).
+    La generación automática de identificadores externos (formato "EXT-N",
+    ver crear_usuario_rapido) no pasa por esta validación: es una operación
+    interna del sistema, no una entrada manual del operador.
     """
-    # Permite letras, números y guiones. Mínimo 3 caracteres.
-    patron = r'^[A-Za-z0-9\-]+$'
-    return bool(re.match(patron, cedula)) and len(cedula) >= 3
+    return cedula.isdigit() and len(cedula) >= 3
 
 
 def _es_correo_valido(correo: str) -> bool:
@@ -96,10 +94,7 @@ def _respuestas_son_distintas(a1: str, a2: str, a3: str) -> bool:
     respuestas = [a1.strip().upper(), a2.strip().upper(), a3.strip().upper()]
     return len(set(respuestas)) == 3
 
-
-# ---------------------------------------------------------------------------
-# Funciones del modelo 
-# ---------------------------------------------------------------------------
+# Funciones del modelo (CRUD con validación integrada)
 
 def validar_login(username: str, password: str) -> bool:
     """
@@ -251,7 +246,7 @@ def crear_usuario(nom, cedula, fecha_nac, correo, telefono, username,
         return False, "Los campos Nombre, Cédula, Fecha de Nacimiento, Usuario y Contraseña son obligatorios."
 
     if not _es_cedula_valida(cedula):
-        return False, "La cédula solo puede contener letras, números y guiones (ej: V-12345678)."
+        return False, "La identificación solo puede contener números y debe tener al menos 3 dígitos (ej: 12345678)."
 
     fecha_ok, msg_fecha = _es_fecha_valida(fecha_nac)
     if not fecha_ok:
@@ -384,7 +379,7 @@ def actualizar_usuario(id_usuario: int, nom, cedula, fecha_nac,
         return False, "El nombre, la cédula y la fecha de nacimiento son obligatorios."
 
     if not _es_cedula_valida(cedula):
-        return False, "La cédula solo puede contener letras, números y guiones."
+        return False, "La identificación solo puede contener números y debe tener al menos 3 dígitos."
 
     fecha_ok, msg_fecha = _es_fecha_valida(fecha_nac)
     if not fecha_ok:
