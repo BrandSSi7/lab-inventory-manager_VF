@@ -1,3 +1,4 @@
+
 """
 views/alarm_module.py
 ----------------------
@@ -7,7 +8,7 @@ y activos marcados como INACTIVO.
 
 El modal de atención delega toda la lógica al AssetController.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
+Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -41,9 +42,7 @@ class AlarmModule(ctk.CTkFrame):
         self._construir_footer()
         self._cargar_datos()
 
-    # ------------------------------------------------------------------
     # Construcción de la UI
-    # ------------------------------------------------------------------
 
     def _construir_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -76,7 +75,7 @@ class AlarmModule(ctk.CTkFrame):
             command=self._limpiar_filtros
         ).pack(side="left")
 
-      
+        # Contador de alarmas activas
         self.lbl_contador = ctk.CTkLabel(
             toolbar, text="",
             font=font_small(), text_color="#EF4444"
@@ -101,24 +100,29 @@ class AlarmModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        config = {
-            "id":          ("ID Incidencia",          100, False),
-            "equipo":      ("Activo Comprometido",    240, True),
-            "estado":      ("Estado Crítico",         150, False),
-            "descripcion": ("Diagnóstico",            280, True),
-            "modelo":      ("Modelo",                 120, True),
-            "fecha":       ("Fecha Límite",           110, False),
-            "severidad":   ("Severidad",              100, False),
+        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
+        ANCHO_COLUMNA = 227
+        encabezados = {
+            "id": "ID Incidencia", "equipo": "Activo Comprometido",
+            "estado": "Estado Crítico", "descripcion": "Diagnóstico",
+            "modelo": "Modelo", "fecha": "Fecha Límite", "severidad": "Severidad",
         }
-        for col, (texto, ancho, stretch) in config.items():
-            self.tree.heading(col, text=texto, anchor="w")
-            self.tree.column(col, width=ancho, anchor="w", stretch=stretch)
+        for col in cols:
+            self.tree.heading(col, text=encabezados[col], anchor="center")
+            self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
 
         self.tree.bind("<Button-1>",  self._bloquear_resize)
         self.tree.bind("<B1-Motion>", self._bloquear_resize)
         self.tree.bind("<Double-1>",  lambda e: self._abrir_atender())
 
-        self.tree.pack(side="left", fill="both", expand=True)
+        # PARCHE QA: el árbol y las dos barras de desplazamiento se ubican
+        # con grid() de forma consistente. Antes solo el árbol usaba pack()
+        # y ninguna barra llegaba a mostrarse, por lo que columnas que no
+        # entraban en el ancho visible quedaban inaccesibles.
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.scroll_y.grid(row=0, column=1, sticky="ns")
+        self.scroll_x.grid(row=1, column=0, sticky="ew")
+
         self._aplicar_colores_filas()
 
     def _construir_footer(self):
@@ -126,7 +130,7 @@ class AlarmModule(ctk.CTkFrame):
         footer.grid(row=3, column=0, sticky="ew", pady=(16, 0))
 
         ctk.CTkButton(
-            footer, text="Sincronizar", width=100, height=BTN_H,
+            footer, text="Actualizar", width=100, height=BTN_H,
             fg_color=("#CBD5E1", "#4B5563"), hover_color=("#94A3B8", "#374151"),
             text_color=TXT_MAIN, corner_radius=BTN_RADIUS,
             command=self._cargar_datos
@@ -140,9 +144,7 @@ class AlarmModule(ctk.CTkFrame):
             command=self._abrir_atender
         ).pack(side="left")
 
-    # ------------------------------------------------------------------
     # Carga de datos
-    # ------------------------------------------------------------------
 
     def _cargar_datos(self):
         busqueda = self.ent_busqueda.get().strip()
@@ -156,7 +158,7 @@ class AlarmModule(ctk.CTkFrame):
             tag = "par" if i % 2 == 0 else "impar"
             self.tree.insert("", "end", values=fila, tags=(tag,))
 
-        
+        # Actualizar el contador en la toolbar
         n = len(alarmas)
         self.lbl_contador.configure(
             text=f"⚠  {n} incidencia{'s' if n != 1 else ''} activa{'s' if n != 1 else ''}"
@@ -168,9 +170,7 @@ class AlarmModule(ctk.CTkFrame):
         self.ent_busqueda.delete(0, tk.END)
         self._cargar_datos()
 
-    # ------------------------------------------------------------------
     # Acciones
-    # ------------------------------------------------------------------
 
     def _abrir_atender(self):
         seleccion = self.tree.selection()
@@ -180,12 +180,10 @@ class AlarmModule(ctk.CTkFrame):
             )
             return
         valores = self.tree.item(seleccion[0])["values"]
-       
+        # valores[0] = id_activo, valores[1] = nombre_equipo
         AtenderAlarmaModal(self, self.ctrl, valores[0], valores[1], self._cargar_datos)
 
-    # ------------------------------------------------------------------
     # Helpers visuales
-    # ------------------------------------------------------------------
 
     def _bloquear_resize(self, event):
         if self.tree.identify_region(event.x, event.y) == "separator":
@@ -196,10 +194,7 @@ class AlarmModule(ctk.CTkFrame):
         self.tree.tag_configure("par",   background=BG_DARK_CARD if es_oscuro else BG_LIGHT_CARD)
         self.tree.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9")
 
-
-# ------------------------------------------------------------------
 # Modal: Atender una incidencia de mantenimiento
-# ------------------------------------------------------------------
 
 class AtenderAlarmaModal(ctk.CTkToplevel):
 
@@ -210,7 +205,8 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         self.nombre_equipo = nombre_equipo
         self.on_saved     = on_saved
 
-        
+        # Obtener el custodio actual del equipo para mostrarlo en el modal
+        # Buscamos el serial primero a través del controlador
         self.custodio = self.ctrl.obtener_custodio(self._obtener_serial())
 
         self.title(f"Atender incidencia — ID {id_activo}")
@@ -226,7 +222,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         activos = self.ctrl.obtener_activos()
         for a in activos:
             if a[0] == self.id_activo:
-                return a[4]  
+                return a[4]  # índice 4 = serial
         return ""
 
     def _construir_ui(self):
@@ -238,7 +234,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         frame = ctk.CTkFrame(self, fg_color="transparent")
         frame.pack(fill="both", expand=True, padx=22, pady=5)
 
-        
+        # Información del activo
         ctk.CTkLabel(
             frame,
             text=f"Activo: {self.nombre_equipo}",
@@ -251,7 +247,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
             font=font_small(), text_color=TXT_MUTED
         ).pack(anchor="w", pady=(0, 18))
 
-        
+        # Nueva fecha de revisión con autocompletado
         ctk.CTkLabel(
             frame, text="Nueva fecha de próxima revisión:",
             font=font_small(), text_color=TXT_MUTED
@@ -262,11 +258,11 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT
         )
         self.ent_fecha.pack(pady=(3, 16))
-        
+        # Sugerir 30 días hacia adelante como fecha por defecto
         self.ent_fecha.insert(0, (datetime.now() + timedelta(days=30)).strftime("%d/%m/%Y"))
         self.ent_fecha.bind("<KeyRelease>", self._autocompletar_fecha)
 
-        
+        # Nuevo estado del equipo
         ctk.CTkLabel(
             frame, text="Actualizar estado del activo:",
             font=font_small(), text_color=TXT_MUTED
@@ -324,3 +320,4 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
             self.destroy()
         else:
             messagebox.showerror("Error de validación", msg, parent=self)
+
