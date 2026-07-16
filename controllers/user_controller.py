@@ -1,10 +1,6 @@
 """
 controllers/user_controller.py
 -------------------------------
-Controlador de Usuarios. Intermediario entre la vista de gestión de personal
-y el modelo user.py. Orquesta validaciones, persistencia y registro de auditoría.
-Ninguna línea de este archivo toca CustomTkinter ni messagebox.
-
 """
 
 import re
@@ -41,7 +37,9 @@ class UserController:
         # Referencia al controlador de sesión para saber quién ejecuta cada acción
         self.auth = auth_controller
 
+    # ------------------------------------------------------------------
     # Lectura
+    # ------------------------------------------------------------------
 
     def obtener_usuarios(self, texto_busqueda: str = "") -> list:
         """Devuelve la lista de usuarios para poblar la tabla en la vista."""
@@ -54,7 +52,9 @@ class UserController:
         """
         return user_model.obtener_nombres_registrados()
 
+    # ------------------------------------------------------------------
     # Creación
+    # ------------------------------------------------------------------
 
     def registrar_usuario(self, datos: dict) -> tuple[bool, str]:
         """
@@ -105,7 +105,7 @@ class UserController:
 
     def registrar_usuario_rapido(self, nombre: str) -> tuple[bool, str]:
         """
-        Alta express de un prestatario externo desde el módulo de préstamos.
+        Alta express de un usuario con rol Propietario desde el módulo de préstamos.
         Devuelve (True, username_generado) o (False, "mensaje de error").
         """
         exito, resultado = user_model.crear_usuario_rapido(nombre)
@@ -115,13 +115,15 @@ class UserController:
                 accion="ALTA RÁPIDA",
                 referencia=f"PERFIL: {nombre.strip().title()}",
                 responsable=self.auth.usuario_actual,
-                detalles=f"Prestatario externo registrado. Login generado: {resultado}.",
+                detalles=f"Usuario con rol Propietario registrado. Login generado: {resultado}.",
                 categoria="Usuarios"
             )
 
         return exito, resultado
 
+    # ------------------------------------------------------------------
     # Actualización
+    # ------------------------------------------------------------------
 
     def actualizar_usuario(self, id_usuario: int, datos: dict) -> tuple[bool, str]:
         """
@@ -137,7 +139,7 @@ class UserController:
         rol_nuevo = datos.get("rol", "").upper()
 
         # --- Protección contra escalada de privilegios ---
-        roles_elevados = ("ADMINISTRADOR EJECUTIVO", "OPERADOR DE LABORATORIO")
+        roles_elevados = ("ADMINISTRADOR EJECUTIVO", "OPERADOR DE INVENTARIO")
         intenta_elevar = any(r in rol_nuevo for r in roles_elevados)
 
         if intenta_elevar and not self.auth.es_administrador():
@@ -161,7 +163,7 @@ class UserController:
             fecha_nac  = datos.get("fecha_nac", ""),
             correo     = datos.get("correo", ""),
             telefono   = datos.get("telefono", ""),
-            rol        = datos.get("rol", "PRESTATARIO EXTERNO"),
+            rol        = datos.get("rol", "PROPIETARIO"),
         )
 
         if exito:
@@ -203,7 +205,9 @@ class UserController:
         )
         return True, f"Contraseña restablecida. El usuario '{username_afectado}' deberá crear una nueva clave en su próximo ingreso."
 
+    # ------------------------------------------------------------------
     # Eliminación
+    # ------------------------------------------------------------------
 
     def eliminar_usuario(self, id_usuario: int) -> tuple[bool, str]:
         """
