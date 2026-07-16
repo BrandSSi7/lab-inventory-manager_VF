@@ -1,11 +1,10 @@
+
 """
 database.py
 -----------
 Módulo de inicialización de la base de datos SQLite para Lab-Inventory Manager.
 Se encarga únicamente de crear las tablas y la conexión compartida.
 
-Autores: Equipo de Ingeniería Informática - 3er Semestre
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import sqlite3
@@ -50,7 +49,8 @@ def inicializar_base_de_datos():
             prestatario TEXT NOT NULL,
             fecha_p     TEXT NOT NULL,
             fecha_d     TEXT NOT NULL,
-            estado      TEXT DEFAULT 'ASIGNADOS'
+            estado      TEXT DEFAULT 'ASIGNADOS',
+            ubicacion   TEXT DEFAULT 'NO ESPECIFICADA'
         )
     """)
 
@@ -64,7 +64,7 @@ def inicializar_base_de_datos():
             correo           TEXT,
             telefono         TEXT,
             username         TEXT NOT NULL UNIQUE,
-            rol              TEXT DEFAULT 'PRESTATARIO EXTERNO',
+            rol              TEXT DEFAULT 'PROPIETARIO',
             password         TEXT NOT NULL,
             q1               TEXT,
             a1               TEXT,
@@ -92,6 +92,12 @@ def inicializar_base_de_datos():
     # Migración segura: agrega la columna si la BD ya existe sin ella
     try:
         cursor.execute("ALTER TABLE usuarios ADD COLUMN debe_cambiar_pwd INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # La columna ya existe, no hacemos nada
+
+    # PARCHE QA: migración para agregar ubicacion a prestamos (BD ya existentes)
+    try:
+        cursor.execute("ALTER TABLE prestamos ADD COLUMN ubicacion TEXT DEFAULT 'NO ESPECIFICADA'")
     except sqlite3.OperationalError:
         pass  # La columna ya existe, no hacemos nada
 
@@ -127,3 +133,4 @@ def inicializar_base_de_datos():
         conn.commit()
 
     conn.close()
+
