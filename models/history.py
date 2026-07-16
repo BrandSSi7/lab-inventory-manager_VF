@@ -1,12 +1,6 @@
 """
 models/history.py
 -----------------
-Modelo del Historial de Auditoría. Gestiona la tabla 'historial'.
-Es un modelo de solo-escritura/lectura: los registros nunca se editan
-ni se eliminan (principio de integridad de auditoría).
-
-Autores: Equipo de Ingeniería Informática 
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 from datetime import datetime
@@ -98,3 +92,5 @@ def obtener_todos(texto_busqueda: str = "", categoria: str = "Todos",
     resultado = cursor.fetchall()
     conn.close()
     return resultado
+
+       
