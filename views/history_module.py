@@ -11,7 +11,7 @@ Filtros disponibles:
   - Categoría: Todos | Equipos | Usuarios | Préstamos | Sistema
   - Orden: Más Recientes, Más Antiguos, A-Z por distintos campos
 
-Autores: Equipo de Ingeniería Informática
+Autores: Equipo de Ingeniería Informática - 4to Semestre
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -47,7 +47,6 @@ class HistoryModule(ctk.CTkFrame):
         self._construir_footer()
         self._cargar_datos()
 
-    # Construcción de la UI
 
     def _construir_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -58,9 +57,9 @@ class HistoryModule(ctk.CTkFrame):
             font=font_title(), text_color=TXT_MAIN
         ).pack(side="left")
 
-        # Indicador visual de que este módulo es de solo lectura
+        
         ctk.CTkLabel(
-            header, text="🔒 Solo lectura",
+            header, text=" Solo lectura",
             font=font_small(), text_color=TXT_MUTED
         ).pack(side="right", padx=(0, 4))
 
@@ -149,25 +148,28 @@ class HistoryModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
-        ANCHO_COLUMNA = 189
+      
+        cols_visibles = tuple(c for c in cols if c != "id")
+
+        
+        ANCHO_COLUMNA = 227
         encabezados = {
             "id": "ID Log", "accion": "Tipo de acción",
             "referencia": "Activo / Ref.", "responsable": "Usuario ejecutivo",
             "fecha": "Fecha y hora", "detalles": "Detalles",
         }
-        for col in cols:
+        for col in cols_visibles:
             self.tree.heading(col, text=encabezados[col], anchor="center")
             self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
+
+        self.tree.column("id", width=0, minwidth=0, stretch=False)
+        self.tree["displaycolumns"] = cols_visibles
 
         # El historial es solo lectura: no hay doble clic para editar
         self.tree.bind("<Button-1>",  self._bloquear_resize)
         self.tree.bind("<B1-Motion>", self._bloquear_resize)
 
-        # PARCHE QA: el árbol y las dos barras de desplazamiento se ubican
-        # con grid() de forma consistente. Antes solo el árbol usaba pack()
-        # y ninguna barra llegaba a mostrarse, por lo que columnas que no
-        # entraban en el ancho visible quedaban inaccesibles.
+    
         self.tree.grid(row=0, column=0, sticky="nsew")
         self.scroll_y.grid(row=0, column=1, sticky="ns")
         self.scroll_x.grid(row=1, column=0, sticky="ew")
@@ -192,14 +194,13 @@ class HistoryModule(ctk.CTkFrame):
             command=self._exportar
         ).pack(side="left")
 
-        # Nota informativa al lado derecho del footer
+       
         ctk.CTkLabel(
             footer,
             text="Los registros del historial no pueden ser modificados ni eliminados.",
             font=font_small(), text_color=TXT_MUTED
         ).pack(side="right")
 
-    # Carga de datos
 
     def _cargar_datos(self):
         busqueda  = self.ent_busqueda.get().strip()
@@ -215,7 +216,6 @@ class HistoryModule(ctk.CTkFrame):
             tag = "par" if i % 2 == 0 else "impar"
             self.tree.insert("", "end", values=fila, tags=(tag,))
 
-        # Actualizar el contador de registros visibles
         n = len(registros)
         self.lbl_contador.configure(
             text=f"{n} registro{'s' if n != 1 else ''} encontrado{'s' if n != 1 else ''}"
@@ -227,13 +227,17 @@ class HistoryModule(ctk.CTkFrame):
         self.combo_orden.set("Más Recientes")
         self._cargar_datos()
 
+    # ------------------------------------------------------------------
     # Exportación
+    # ------------------------------------------------------------------
 
     def _exportar(self):
         from views.asset_module import ExportarModal
         ExportarModal(self, self.tree, "Historial")
 
+    # ------------------------------------------------------------------
     # Helpers visuales
+    # ------------------------------------------------------------------
 
     def _bloquear_resize(self, event):
         if self.tree.identify_region(event.x, event.y) == "separator":
