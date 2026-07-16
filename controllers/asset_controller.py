@@ -1,10 +1,7 @@
-"""
+
+   """
 controllers/asset_controller.py
 --------------------------------
-Controlador de Activos Tecnológicos. Intermediario entre la vista de inventario
-y el modelo asset.py. Gestiona incorporación, edición de estados, alarmas
-e importación masiva desde CSV.
-
 """
 
 import csv
