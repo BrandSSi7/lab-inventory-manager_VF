@@ -8,7 +8,7 @@ y activos marcados como INACTIVO.
 
 El modal de atención delega toda la lógica al AssetController.
 
-Autores: Equipo de Ingeniería Informática
+Autores: Equipo de Ingeniería Informática - 4to Semestre
 Proyecto: Xorte - Lab Inventory Manager
 """
 
@@ -18,7 +18,7 @@ import customtkinter as ctk
 from datetime import datetime, timedelta
 
 from views.theme import (
-    BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
+    BG_MAIN, BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
     TXT_MAIN, TXT_MUTED, ACCENT_BLUE, ACCENT_HOVER,
     BTN_RADIUS, INPUT_H, BTN_H, font_title, font_section, font_small,
     BG_DARK_CARD, BG_LIGHT_CARD
@@ -42,7 +42,9 @@ class AlarmModule(ctk.CTkFrame):
         self._construir_footer()
         self._cargar_datos()
 
+    # ------------------------------------------------------------------
     # Construcción de la UI
+    # ------------------------------------------------------------------
 
     def _construir_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -100,16 +102,25 @@ class AlarmModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
-        ANCHO_COLUMNA = 227
+        # PARCHE: se oculta la columna "id" de la vista (a petición del
+        # profesor). Se conserva como columna de datos (valores[0] sigue
+        # siendo el id_activo, usado internamente por _abrir_atender), pero
+        # se excluye de "displaycolumns".
+        cols_visibles = tuple(c for c in cols if c != "id")
+
+        # Mismo ancho y centrado para todas las columnas visibles (espaciado uniforme).
+        ANCHO_COLUMNA = 265
         encabezados = {
             "id": "ID Incidencia", "equipo": "Activo Comprometido",
             "estado": "Estado Crítico", "descripcion": "Diagnóstico",
             "modelo": "Modelo", "fecha": "Fecha Límite", "severidad": "Severidad",
         }
-        for col in cols:
+        for col in cols_visibles:
             self.tree.heading(col, text=encabezados[col], anchor="center")
             self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
+
+        self.tree.column("id", width=0, minwidth=0, stretch=False)
+        self.tree["displaycolumns"] = cols_visibles
 
         self.tree.bind("<Button-1>",  self._bloquear_resize)
         self.tree.bind("<B1-Motion>", self._bloquear_resize)
@@ -144,7 +155,9 @@ class AlarmModule(ctk.CTkFrame):
             command=self._abrir_atender
         ).pack(side="left")
 
+    # ------------------------------------------------------------------
     # Carga de datos
+    # ------------------------------------------------------------------
 
     def _cargar_datos(self):
         busqueda = self.ent_busqueda.get().strip()
@@ -170,7 +183,9 @@ class AlarmModule(ctk.CTkFrame):
         self.ent_busqueda.delete(0, tk.END)
         self._cargar_datos()
 
+    # ------------------------------------------------------------------
     # Acciones
+    # ------------------------------------------------------------------
 
     def _abrir_atender(self):
         seleccion = self.tree.selection()
@@ -183,7 +198,9 @@ class AlarmModule(ctk.CTkFrame):
         # valores[0] = id_activo, valores[1] = nombre_equipo
         AtenderAlarmaModal(self, self.ctrl, valores[0], valores[1], self._cargar_datos)
 
+    # ------------------------------------------------------------------
     # Helpers visuales
+    # ------------------------------------------------------------------
 
     def _bloquear_resize(self, event):
         if self.tree.identify_region(event.x, event.y) == "separator":
@@ -194,7 +211,10 @@ class AlarmModule(ctk.CTkFrame):
         self.tree.tag_configure("par",   background=BG_DARK_CARD if es_oscuro else BG_LIGHT_CARD)
         self.tree.tag_configure("impar", background="#1E293B"     if es_oscuro else "#F1F5F9")
 
+
+# ------------------------------------------------------------------
 # Modal: Atender una incidencia de mantenimiento
+# ------------------------------------------------------------------
 
 class AtenderAlarmaModal(ctk.CTkToplevel):
 
@@ -210,9 +230,9 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         self.custodio = self.ctrl.obtener_custodio(self._obtener_serial())
 
         self.title(f"Atender incidencia — ID {id_activo}")
-        self.geometry("420x400")
+        self.geometry("500x460")
         self.resizable(False, False)
-        self.configure(fg_color=BG_CARD)
+        self.configure(fg_color=BG_MAIN)
         self.grab_set()
 
         self._construir_ui()
@@ -226,12 +246,20 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         return ""
 
     def _construir_ui(self):
+        # PARCHE: tarjeta central proporcional (tamaño relativo, sin panel
+        # de marca) para acciones internas rápidas dentro de la app.
+        card = ctk.CTkFrame(
+            self, fg_color=BG_CARD, corner_radius=12,
+            border_width=1, border_color=BORDER_INPUT
+        )
+        card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.9, relheight=0.88)
+
         ctk.CTkLabel(
-            self, text=f"RESOLUCIÓN DE INCIDENCIA (ID: {self.id_activo})",
+            card, text=f"RESOLUCIÓN DE INCIDENCIA (ID: {self.id_activo})",
             font=font_section(), text_color=TXT_MAIN
         ).pack(pady=(22, 8))
 
-        frame = ctk.CTkFrame(self, fg_color="transparent")
+        frame = ctk.CTkFrame(card, fg_color="transparent")
         frame.pack(fill="both", expand=True, padx=22, pady=5)
 
         # Información del activo
@@ -254,7 +282,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         ).pack(anchor="w")
 
         self.ent_fecha = ctk.CTkEntry(
-            frame, width=370, height=INPUT_H,
+            frame, width=420, height=INPUT_H,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT
         )
         self.ent_fecha.pack(pady=(3, 16))
@@ -271,7 +299,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         self.combo_estado = ctk.CTkComboBox(
             frame,
             values=["OPERATIVO", "MANTENIMIENTO", "ASIGNADO", "INACTIVO"],
-            width=370, height=INPUT_H,
+            width=420, height=INPUT_H,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT,
             button_color=BG_INPUT, button_hover_color=ACCENT_HOVER
         )
@@ -279,7 +307,7 @@ class AtenderAlarmaModal(ctk.CTkToplevel):
         self.combo_estado.pack(pady=(3, 22))
 
         ctk.CTkButton(
-            self, text="Guardar y resolver incidencia",
+            card, text="Guardar y resolver incidencia",
             font=font_section(), height=42,
             fg_color="#10B981", hover_color="#059669",
             text_color="white", corner_radius=BTN_RADIUS,
