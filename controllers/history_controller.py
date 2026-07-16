@@ -1,8 +1,14 @@
 """
 controllers/history_controller.py
 ----------------------------------
-Controlador del Historial de Auditoría.
+Controlador del Historial de Auditoría. Su único trabajo es consultar
+y filtrar los registros del historial para la vista correspondiente.
 
+Como el historial es de solo lectura para el usuario final,
+este controlador no tiene operaciones de escritura.
+
+Autores: Equipo de Ingeniería Informática - 4to Semestre
+Proyecto: Xorte - Lab Inventory Manager
 """
 
 import models.history as history_model
