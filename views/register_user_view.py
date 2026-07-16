@@ -2,12 +2,6 @@
 """
 views/register_user_view.py
 ----------------------------
-Modal de registro de un nuevo operador del sistema.
-El formulario vive dentro de un CTkScrollableFrame para garantizar
-que el botón 'Guardar' sea siempre visible sin importar la resolución.
-
-Autocompletado de '/' en la fecha de nacimiento con evento <KeyRelease>.
-Validación de preguntas de seguridad distintas en tiempo real.
 
 Autores: Equipo de Ingeniería Informática
 Proyecto: Xorte - Lab Inventory Manager
@@ -19,8 +13,9 @@ import customtkinter as ctk
 
 from controllers.user_controller import UserController
 from views.theme import (
-    BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
-    TXT_MAIN, TXT_MUTED, ACCENT_BLUE, ACCENT_HOVER,
+    BG_MAIN, BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
+    TXT_MAIN, TXT_MUTED, ACCENT_BLUE, ACCENT_HOVER, BRAND_BG,
+    construir_panel_marca,
     BTN_RADIUS, INPUT_H, BTN_H, font_section, font_body, font_small
 )
 
@@ -46,22 +41,47 @@ class RegisterUserModal(ctk.CTkToplevel):
         self.on_saved = on_saved
 
         self.title("Registro de nuevo operador")
-        self.geometry("460x680")
+        self.geometry("1300x780")
         self.resizable(False, False)
-        self.configure(fg_color=BG_CARD)
+        self.configure(fg_color=BG_MAIN)
         self.grab_set()
 
         self._construir_ui()
 
     def _construir_ui(self):
-        ctk.CTkLabel(
-            self, text="REGISTRO DEL SISTEMA",
-            font=font_section(), text_color=TXT_MAIN
-        ).pack(pady=(20, 5))
+        # Mismo layout de dos paneles que LoginView y RecuperacionModal:
+        # carril de marca a la izquierda y tarjeta de formulario a la
+        # derecha. Antes el formulario quedaba flotando sin tarjeta
+        # visible en el centro de una ventana enorme.
+        self.grid_columnconfigure(0, weight=58)
+        self.grid_columnconfigure(1, weight=42)
+        self.grid_rowconfigure(0, weight=1)
 
-        # ScrollableFrame: soluciona el bug donde el botón desaparecía
-        # en pantallas con resolución menor a 768px de alto
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        panel_marca = ctk.CTkFrame(self, fg_color=BRAND_BG, corner_radius=0)
+        panel_marca.grid(row=0, column=0, sticky="nsew")
+        construir_panel_marca(panel_marca)
+
+        panel_form = ctk.CTkFrame(self, fg_color=BG_MAIN, corner_radius=0)
+        panel_form.grid(row=0, column=1, sticky="nsew")
+
+        card = ctk.CTkFrame(
+            panel_form, fg_color=BG_CARD, corner_radius=12,
+            border_width=1, border_color=BORDER_INPUT
+        )
+        
+        card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.84, relheight=0.9)
+
+        ctk.CTkLabel(
+            card, text="REGISTRO DEL SISTEMA",
+            font=font_section(), text_color=TXT_MAIN
+        ).pack(pady=(24, 2))
+
+        ctk.CTkLabel(
+            card, text="Completa tus datos para crear una cuenta de operador",
+            font=font_small(), text_color=TXT_MUTED
+        ).pack(pady=(0, 10))
+
+        scroll = ctk.CTkScrollableFrame(card, fg_color="transparent")
         scroll.pack(fill="both", expand=True, padx=20, pady=(0, 10))
 
         def entry(placeholder, show=""):
@@ -117,7 +137,7 @@ class RegisterUserModal(ctk.CTkToplevel):
         self.combo_q3 = self._combo_pregunta(scroll, PREGUNTAS[2])
         self.ent_a3   = entry("Respuesta 3")
 
-        # --- Botón guardar (dentro del scroll = siempre visible) ---
+        # Botón guardar 
         ctk.CTkButton(
             scroll, text="Registrar operador",
             font=font_section(), height=42, width=390,
@@ -181,8 +201,6 @@ class RegisterUserModal(ctk.CTkToplevel):
             "q3": self.combo_q3.get(), "a3": self.ent_a3.get().strip(),
         }
 
-        # Defensa en profundidad — capa Vista: validar formato de identificación
-        # antes de enviar al controlador para dar retroalimentación inmediata.
         cedula = datos["cedula"]
         if not cedula.isdigit() or len(cedula) < 3:
             messagebox.showerror(
@@ -209,5 +227,7 @@ class RegisterUserModal(ctk.CTkToplevel):
         if self.on_saved:
             self.on_saved()
         self.destroy()
+
+
 
 
