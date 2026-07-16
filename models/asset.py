@@ -1,8 +1,7 @@
-"""
+
+   """
 models/asset.py
 ---------------
-El codigo permite ver el Modelo de Activos Tecnológicos. Gestiona la tabla 'equipos' en SQLite.
-Incluye validación de serial único, estados permitidos y fechas de mantenimiento.
 """
 
 import sqlite3
