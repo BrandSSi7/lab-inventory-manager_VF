@@ -1,11 +1,7 @@
 """
 controllers/loan_controller.py
 -------------------------------
-Controlador de Préstamos. Gestiona el ciclo completo de asignación:
-registro de nuevos préstamos, modificaciones, devoluciones y eliminaciones.
 
-Coordina los modelos loan.py, asset.py (para actualizar estados del equipo)
-y history.py (para auditoría).
 """
 
 import models.loan    as loan_model
@@ -151,3 +147,4 @@ class LoanController:
             return True, "Registro de préstamo eliminado correctamente."
 
         return False, descripcion_o_error
+
