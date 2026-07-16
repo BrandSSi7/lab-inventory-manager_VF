@@ -1,12 +1,6 @@
-
 """
 models/user.py
 --------------
-Modelo de Usuarios, Gestiona toda la interacción con la tabla 'usuarios'
-en SQLite: consultas, inserciones, actualizaciones y eliminaciones.
-
-Toda validación de datos ocurre AQUÍ, antes de tocar la base de datos.
-El controlador solo recibe (True, "") o (False, "mensaje de error").
 """
 
 import sqlite3
@@ -15,13 +9,43 @@ from datetime import datetime
 
 from database import get_connection, DB_NAME
 
-# Funciones de validación de datos
+
+# ---------------------------------------------------------------------------
+# Funciones de validación de datos (sin efectos secundarios)
+# ---------------------------------------------------------------------------
 
 def _es_cedula_valida(cedula: str) -> bool:
     """
     Valida que la cédula contenga únicamente dígitos (0-9).
+    La generación automática de identificadores externos (formato "EXT-N",
+    ver crear_usuario_rapido) no pasa por esta validación: es una operación
+    interna del sistema, no una entrada manual del operador.
     """
     return cedula.isdigit() and len(cedula) >= 3
+
+
+def _es_nombre_valido(nombre: str) -> bool:
+    """
+    PARCHE QA: Valida que el campo "Nombre" corresponda a un nombre real
+    y no a números o símbolos sueltos (ej: "1213", "0000", "!!!").
+
+    Reglas:
+    - Debe contener al menos 2 caracteres de letra (cualquier alfabeto,
+      incluye tildes, ñ, ç, ã, ü, etc. vía str.isalpha()).
+    - Solo se permiten letras, espacios, guiones y apóstrofos
+      (para nombres como "María José", "Jean-Pierre", "O'Connor", "João").
+    - No se permiten dígitos en ninguna posición del nombre.
+    """
+    nombre = nombre.strip()
+    if not nombre:
+        return False
+
+    caracteres_permitidos = (" ", "-", "'")
+    if not all(c.isalpha() or c in caracteres_permitidos for c in nombre):
+        return False
+
+    cantidad_letras = sum(1 for c in nombre if c.isalpha())
+    return cantidad_letras >= 2
 
 
 def _es_correo_valido(correo: str) -> bool:
@@ -36,7 +60,7 @@ def _es_correo_valido(correo: str) -> bool:
 def _es_telefono_valido(telefono: str) -> bool:
     """
     Valida que el teléfono contenga solo dígitos numéricos.
-    Mínimo 7 dígitos
+    Mínimo 7 dígitos para ser razonable.
     """
     return telefono.isdigit() and len(telefono) >= 7
 
@@ -88,7 +112,10 @@ def _respuestas_son_distintas(a1: str, a2: str, a3: str) -> bool:
     respuestas = [a1.strip().upper(), a2.strip().upper(), a3.strip().upper()]
     return len(set(respuestas)) == 3
 
+
+# ---------------------------------------------------------------------------
 # Funciones del modelo (CRUD con validación integrada)
+# ---------------------------------------------------------------------------
 
 def validar_login(username: str, password: str) -> bool:
     """
@@ -239,6 +266,10 @@ def crear_usuario(nom, cedula, fecha_nac, correo, telefono, username,
     if not nom or not cedula or not username or not password or not fecha_nac:
         return False, "Los campos Nombre, Cédula, Fecha de Nacimiento, Usuario y Contraseña son obligatorios."
 
+    # PARCHE QA: el nombre debe contener letras reales, no solo números.
+    if not _es_nombre_valido(nom):
+        return False, "El nombre debe contener al menos 2 letras y no puede consistir solo en números (ej: 'Juan Pérez')."
+
     if not _es_cedula_valida(cedula):
         return False, "La identificación solo puede contener números y debe tener al menos 3 dígitos (ej: 12345678)."
 
@@ -283,7 +314,7 @@ def crear_usuario(nom, cedula, fecha_nac, correo, telefono, username,
             nom, cedula, fecha_nac,
             correo if correo else "NO ASIGNADO",
             telefono if telefono else "NO ASIGNADO",
-            username, "PRESTATARIO EXTERNO", password.strip(),
+            username, "PROPIETARIO", password.strip(),
             q1.strip().upper(), a1.strip().upper(),
             q2.strip().upper(), a2.strip().upper(),
             q3.strip().upper(), a3.strip().upper(),
@@ -308,11 +339,15 @@ def crear_usuario(nom, cedula, fecha_nac, correo, telefono, username,
 
 def crear_usuario_rapido(nombre: str) -> tuple[bool, str]:
     """
-    Alta rápida de un prestatario externo: genera un username automático
+    Alta rápida de un usuario con rol Propietario: genera un username automático
     y una contraseña temporal '1234'. Se usa desde el módulo de préstamos.
     """
     if not nombre or not nombre.strip():
-        return False, "El nombre del prestatario no puede estar vacío."
+        return False, "El nombre del propietario no puede estar vacío."
+
+    # PARCHE QA: el nombre debe contener letras reales, no solo números.
+    if not _es_nombre_valido(nombre.strip()):
+        return False, "El nombre debe contener al menos 2 letras y no puede consistir solo en números."
 
     nombre_normalizado = nombre.strip().title()
 
@@ -345,7 +380,7 @@ def crear_usuario_rapido(nombre: str) -> tuple[bool, str]:
         """, (
             nombre_normalizado, cedula_ext, "01/01/2000",
             "NO ASIGNADO", "NO ASIGNADO",
-            username_final, "PRESTATARIO EXTERNO", "1234",
+            username_final, "PROPIETARIO", "1234",
             "", "", "", "", "", "", 1
         ))
         conn.commit()
@@ -354,7 +389,7 @@ def crear_usuario_rapido(nombre: str) -> tuple[bool, str]:
 
     except sqlite3.IntegrityError:
         conn.close()
-        return False, "Ocurrió un error al registrar el prestatario. Intente con otro nombre."
+        return False, "Ocurrió un error al registrar el propietario. Intente con otro nombre."
 
 
 def actualizar_usuario(id_usuario: int, nom, cedula, fecha_nac,
@@ -371,6 +406,10 @@ def actualizar_usuario(id_usuario: int, nom, cedula, fecha_nac,
 
     if not nom or not cedula or not fecha_nac:
         return False, "El nombre, la cédula y la fecha de nacimiento son obligatorios."
+
+    # PARCHE QA: el nombre debe contener letras reales, no solo números.
+    if not _es_nombre_valido(nom):
+        return False, "El nombre debe contener al menos 2 letras y no puede consistir solo en números (ej: 'Juan Pérez')."
 
     if not _es_cedula_valida(cedula):
         return False, "La identificación solo puede contener números y debe tener al menos 3 dígitos."
@@ -449,3 +488,6 @@ def eliminar_usuario(id_usuario: int) -> tuple[bool, str]:
     conn.commit()
     conn.close()
     return True, nombre
+
+
+    
