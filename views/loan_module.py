@@ -1,4 +1,6 @@
 
+
+
 """
 views/loan_module.py
 ---------------------
@@ -15,7 +17,7 @@ from tkinter import ttk, messagebox
 import customtkinter as ctk
 
 from views.theme import (
-    BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
+    BG_MAIN, BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
     TXT_MAIN, TXT_MUTED, ACCENT_BLUE, ACCENT_HOVER,
     BTN_RADIUS, INPUT_H, BTN_H, font_title, font_section, font_small,
     BG_DARK_CARD, BG_LIGHT_CARD
@@ -102,17 +104,26 @@ class LoanModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
-        ANCHO_COLUMNA = 191
+        # PARCHE: se oculta la columna "id" de la vista (a petición del
+        # profesor). Se conserva como columna de datos (valores[0] sigue
+        # siendo el id del préstamo, usado internamente por _procesar_devolucion
+        # y _eliminar), pero se excluye de "displaycolumns".
+        cols_visibles = tuple(c for c in cols if c != "id")
+
+        # Mismo ancho y centrado para todas las columnas visibles (espaciado uniforme).
+        ANCHO_COLUMNA = 218
         encabezados = {
             "id": "ID", "equipo": "Equipo", "serial": "Serial",
             "prestatario": "Prestatario", "fecha_p": "Fecha Préstamo",
             "fecha_d": "Fecha Devolución", "estado": "Estado",
             "ubicacion": "Ubicación",
         }
-        for col in cols:
+        for col in cols_visibles:
             self.tree.heading(col, text=encabezados[col], anchor="center")
             self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
+
+        self.tree.column("id", width=0, minwidth=0, stretch=False)
+        self.tree["displaycolumns"] = cols_visibles
 
         self.tree.bind("<Button-1>",  self._bloquear_resize)
         self.tree.bind("<B1-Motion>", self._bloquear_resize)
@@ -309,17 +320,25 @@ class ModificarPrestamoModal(ctk.CTkToplevel):
         self.id_prestamo = datos_prestamo[0]
 
         self.title(f"Modificar préstamo — ID {self.id_prestamo}")
-        self.geometry("420x340")
+        self.geometry("500x420")
         self.resizable(False, False)
-        self.configure(fg_color=BG_CARD)
+        self.configure(fg_color=BG_MAIN)
         self.grab_set()
 
+        # PARCHE: tarjeta central proporcional (tamaño relativo, sin panel
+        # de marca) para acciones internas rápidas dentro de la app.
+        card = ctk.CTkFrame(
+            self, fg_color=BG_CARD, corner_radius=12,
+            border_width=1, border_color=BORDER_INPUT
+        )
+        card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.9, relheight=0.88)
+
         ctk.CTkLabel(
-            self, text=f"MODIFICAR PRÉSTAMO (ID: {self.id_prestamo})",
+            card, text=f"MODIFICAR PRÉSTAMO (ID: {self.id_prestamo})",
             font=font_section(), text_color=TXT_MAIN
         ).pack(pady=(22, 8))
 
-        frame = ctk.CTkFrame(self, fg_color="transparent")
+        frame = ctk.CTkFrame(card, fg_color="transparent")
         frame.pack(fill="both", expand=True, padx=22, pady=5)
 
         ctk.CTkLabel(
@@ -332,7 +351,7 @@ class ModificarPrestamoModal(ctk.CTkToplevel):
         ctk.CTkLabel(frame, text="Nueva fecha de devolución:",
                      font=font_small(), text_color=TXT_MUTED).pack(anchor="w")
         self.ent_fecha = ctk.CTkEntry(
-            frame, width=360, height=INPUT_H,
+            frame, width=420, height=INPUT_H,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT
         )
         self.ent_fecha.pack(pady=(3, 14))
@@ -343,7 +362,7 @@ class ModificarPrestamoModal(ctk.CTkToplevel):
                      font=font_small(), text_color=TXT_MUTED).pack(anchor="w")
         self.combo_estado = ctk.CTkComboBox(
             frame, values=["ASIGNADOS", "EN DEVOLUCIÓN"],
-            width=360, height=INPUT_H,
+            width=420, height=INPUT_H,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT,
             button_color=BG_INPUT, button_hover_color=ACCENT_HOVER
         )
@@ -352,7 +371,7 @@ class ModificarPrestamoModal(ctk.CTkToplevel):
         self.combo_estado.pack(pady=(3, 20))
 
         ctk.CTkButton(
-            self, text="Guardar cambios",
+            card, text="Guardar cambios",
             font=font_section(), height=42,
             fg_color="#10B981", hover_color="#059669",
             text_color="white", corner_radius=BTN_RADIUS,
@@ -393,4 +412,5 @@ class ModificarPrestamoModal(ctk.CTkToplevel):
             self.destroy()
         else:
             messagebox.showerror("Error", msg, parent=self)
+
 
