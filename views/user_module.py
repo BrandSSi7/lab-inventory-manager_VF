@@ -5,12 +5,6 @@ views/user_module.py
 Módulo visual de Control de Personal Autorizado.
 Permite ver, registrar, editar y eliminar usuarios del sistema.
 
-El modal de edición usa CTkScrollableFrame para garantizar que los botones
-de 'Guardar' y 'Resetear Clave' sean siempre visibles, incluso en laptops
-con pantallas de 768px de alto.
-
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import tkinter as tk
