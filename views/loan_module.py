@@ -8,8 +8,6 @@ Módulo visual de Trazabilidad de Préstamos.
 Muestra todos los préstamos activos e históricos, permite modificar
 fechas/estado y eliminar registros con confirmación previa.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import tkinter as tk
