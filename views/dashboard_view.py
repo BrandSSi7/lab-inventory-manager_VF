@@ -11,8 +11,7 @@ y enruta la navegación a cada módulo visual según el botón pulsado.
 Los módulos internos (activos, préstamos, usuarios, historial) se importan
 de forma diferida para mantener los tiempos de carga bajos.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
+
 """
 
 from tkinter import messagebox
