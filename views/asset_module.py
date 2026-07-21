@@ -1,4 +1,5 @@
 
+
 """
 views/asset_module.py
 ----------------------
@@ -16,7 +17,7 @@ import customtkinter as ctk
 from datetime import datetime, timedelta
 
 from views.theme import (
-    BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
+    BG_MAIN, BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
     TXT_MAIN, TXT_MUTED, ACCENT_BLUE, ACCENT_HOVER,
     BTN_RADIUS, INPUT_H, BTN_H, font_title, font_section, font_small, font_body,
     BG_DARK_CARD, BG_LIGHT_CARD, TXT_DARK_MAIN, TXT_LIGHT_MAIN
@@ -124,16 +125,28 @@ class AssetModule(ctk.CTkFrame):
         self.scroll_y.config(command=self.tree.yview)
         self.scroll_x.config(command=self.tree.xview)
 
-        # Mismo ancho y centrado para todas las columnas (espaciado uniforme).
-        ANCHO_COLUMNA = 231
+        # PARCHE: se oculta la columna "id" de la vista (a petición del
+        # profesor). Se conserva como columna de datos (values[0] sigue
+        # siendo el id del activo, usado internamente por _abrir_editar_estado
+        # y _eliminar), pero se excluye de "displaycolumns" para que no
+        # aparezca en pantalla ni en las exportaciones.
+        cols_visibles = tuple(c for c in cols if c != "id")
+
+        # Mismo ancho y centrado para todas las columnas visibles (espaciado uniforme).
+        ANCHO_COLUMNA = 270
         encabezados = {"id": "ID", "nombre": "Descripción del Activo",
                        "marca": "Fabricante", "modelo": "Modelo",
                        "serial": "Serial", "estado": "Estado",
                        "mantenimiento": "Próx. Revisión"}
 
-        for col in cols:
+        for col in cols_visibles:
             self.tree.heading(col, text=encabezados[col], anchor="center")
             self.tree.column(col, width=ANCHO_COLUMNA, anchor="center", stretch=True)
+
+        # La columna "id" queda con ancho 0 y fuera de displaycolumns: no ocupa
+        # espacio visual ni aparece como encabezado.
+        self.tree.column("id", width=0, minwidth=0, stretch=False)
+        self.tree["displaycolumns"] = cols_visibles
 
         # Bloquear redimensión de columnas con el mouse
         self.tree.bind("<Button-1>",   self._bloquear_resize)
@@ -302,26 +315,34 @@ class IncorporarActivoModal(ctk.CTkToplevel):
         self.on_saved = on_saved
 
         self.title("Incorporar nuevo activo")
-        self.geometry("460x560")
+        self.geometry("560x680")
         self.resizable(False, False)
-        self.configure(fg_color=BG_CARD)
+        self.configure(fg_color=BG_MAIN)
         self.grab_set()
 
         self._construir_ui()
 
     def _construir_ui(self):
+        # PARCHE: tarjeta central proporcional (tamaño relativo, sin panel
+        # de marca) para acciones internas rápidas dentro de la app.
+        card = ctk.CTkFrame(
+            self, fg_color=BG_CARD, corner_radius=12,
+            border_width=1, border_color=BORDER_INPUT
+        )
+        card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.9, relheight=0.92)
+
         ctk.CTkLabel(
-            self, text="REGISTRO TÉCNICO DE ACTIVO",
+            card, text="REGISTRO TÉCNICO DE ACTIVO",
             font=font_section(), text_color=TXT_MAIN
         ).pack(pady=(20, 5))
 
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        scroll = ctk.CTkScrollableFrame(card, fg_color="transparent")
         scroll.pack(fill="both", expand=True, padx=22, pady=(0, 10))
 
         def entrada(placeholder):
             e = ctk.CTkEntry(
                 scroll, placeholder_text=placeholder,
-                width=390, height=INPUT_H,
+                width=470, height=INPUT_H,
                 fg_color=BG_INPUT, border_color=BORDER_INPUT,
                 text_color=TXT_INPUT, placeholder_text_color=TXT_PLACEHOLDER
             )
@@ -358,7 +379,7 @@ class IncorporarActivoModal(ctk.CTkToplevel):
 
         # Campo siempre habilitado: CTkEntry disabled no devuelve valor con .get()
         self.ent_fecha = ctk.CTkEntry(
-            scroll, width=390, height=INPUT_H,
+            scroll, width=470, height=INPUT_H,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT
         )
         self.ent_fecha.pack(pady=(0, 6))
@@ -367,7 +388,7 @@ class IncorporarActivoModal(ctk.CTkToplevel):
 
         ctk.CTkButton(
             scroll, text="Completar incorporación",
-            font=font_section(), height=42, width=390,
+            font=font_section(), height=42, width=470,
             fg_color=ACCENT_BLUE, hover_color=ACCENT_HOVER,
             text_color="white", corner_radius=BTN_RADIUS,
             command=self._guardar
@@ -427,33 +448,41 @@ class EditarEstadoModal(ctk.CTkToplevel):
         self.on_saved  = on_saved
 
         self.title(f"Editar estado — ID {id_activo}")
-        self.geometry("340x210")
+        self.geometry("440x320")
         self.resizable(False, False)
-        self.configure(fg_color=BG_CARD)
+        self.configure(fg_color=BG_MAIN)
         self.grab_set()
 
+        # PARCHE: tarjeta central proporcional (tamaño relativo, sin panel
+        # de marca) para acciones internas rápidas dentro de la app.
+        card = ctk.CTkFrame(
+            self, fg_color=BG_CARD, corner_radius=12,
+            border_width=1, border_color=BORDER_INPUT
+        )
+        card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.88, relheight=0.85)
+
         ctk.CTkLabel(
-            self, text=f"Modificar estado (ID: {id_activo})",
+            card, text=f"Modificar estado (ID: {id_activo})",
             font=font_section(), text_color=TXT_MAIN
-        ).pack(pady=(24, 12))
+        ).pack(pady=(28, 14))
 
         self.combo = ctk.CTkComboBox(
-            self,
+            card,
             values=["OPERATIVO", "MANTENIMIENTO", "ASIGNADO", "INACTIVO"],
-            width=240, height=INPUT_H,
+            width=280, height=INPUT_H,
             fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT,
             button_color=BG_INPUT, button_hover_color=ACCENT_HOVER
         )
         self.combo.set(estado_actual)
-        self.combo.pack(pady=8)
+        self.combo.pack(pady=10)
 
         ctk.CTkButton(
-            self, text="Actualizar estado",
-            font=font_section(), height=BTN_H, width=240,
+            card, text="Actualizar estado",
+            font=font_section(), height=BTN_H, width=280,
             fg_color="#10B981", hover_color="#059669",
             text_color="white", corner_radius=BTN_RADIUS,
             command=self._guardar
-        ).pack(pady=16)
+        ).pack(pady=18)
 
     def _guardar(self):
         nuevo_estado = self.combo.get()
@@ -523,8 +552,20 @@ class ExportarModal(ctk.CTkToplevel):
         import csv, os
         from datetime import datetime
 
-        filas    = [self.tree.item(i)["values"] for i in self.tree.get_children()]
-        columnas = [self.tree.heading(c)["text"] for c in self.tree["columns"]]
+        # PARCHE: se exportan solo las columnas visibles (displaycolumns),
+        # no todas las columnas de datos. Así la columna "id" -oculta en
+        # pantalla- tampoco aparece en los archivos exportados.
+        display_cols = self.tree["displaycolumns"]
+        if display_cols == ("#all",):
+            display_cols = self.tree["columns"]
+        todas_las_cols = list(self.tree["columns"])
+        indices = [todas_las_cols.index(c) for c in display_cols]
+
+        columnas = [self.tree.heading(c)["text"] for c in display_cols]
+        filas    = [
+            [self.tree.item(i)["values"][idx] for idx in indices]
+            for i in self.tree.get_children()
+        ]
 
         if not filas:
             messagebox.showwarning("Sin datos", "La tabla no tiene datos para exportar.", parent=self)
@@ -585,3 +626,6 @@ class ExportarModal(ctk.CTkToplevel):
 
         messagebox.showinfo("Exportación exitosa", f"Archivo guardado en:\n{path}", parent=self)
         self.destroy()
+
+
+
