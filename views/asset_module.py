@@ -7,8 +7,6 @@ Módulo visual de Inventario de Activos Tecnológicos.
 Contiene la tabla principal, barra de búsqueda+filtro, botones de acción
 y los modales de incorporación y edición de estado.
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import tkinter as tk
