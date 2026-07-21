@@ -3,10 +3,8 @@
 views/theme.py
 --------------
 Constantes de diseño (colores, fuentes, radios) compartidas por todas las vistas.
-Un solo lugar para ajustar la estética de toda la aplicación.
+ajustar la estética de la aplicación
 
-Autores: Equipo de Ingeniería Informática - 4to Semestre
-Proyecto: Xorte - Lab Inventory Manager
 """
 
 import customtkinter as ctk
