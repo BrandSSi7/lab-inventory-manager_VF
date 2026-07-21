@@ -1,5 +1,4 @@
 
-
 """
 views/user_module.py
 ---------------------
@@ -19,7 +18,7 @@ from tkinter import ttk, messagebox
 import customtkinter as ctk
 
 from views.theme import (
-    BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
+    BG_MAIN, BG_CARD, BG_INPUT, BORDER_INPUT, TXT_INPUT, TXT_PLACEHOLDER,
     TXT_MAIN, TXT_MUTED, ACCENT_BLUE, ACCENT_HOVER,
     BTN_RADIUS, INPUT_H, BTN_H, font_title, font_section, font_small,
     BG_DARK_CARD, BG_LIGHT_CARD
@@ -108,6 +107,13 @@ class UserModule(ctk.CTkFrame):
         for col, (texto, ancho, stretch) in config.items():
             self.tree.heading(col, text=texto, anchor="w")
             self.tree.column(col, width=ancho, anchor="w", stretch=stretch)
+
+        # PARCHE: se oculta la columna "id" de la vista (a petición del
+        # profesor). Se conserva como columna de datos (valores[0] sigue
+        # siendo el id del usuario, usado internamente por _eliminar_usuario),
+        # pero se excluye de "displaycolumns".
+        self.tree.column("id", width=0, minwidth=0, stretch=False)
+        self.tree["displaycolumns"] = tuple(c for c in cols if c != "id")
 
         self.tree.bind("<Button-1>",  self._bloquear_resize)
         self.tree.bind("<B1-Motion>", self._bloquear_resize)
@@ -249,28 +255,38 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         self.rol_original = str(datos_usuario[7]) if len(datos_usuario) > 7 else "PROPIETARIO"
 
         self.title(f"Editar perfil — ID {self.id_usuario}")
-        self.geometry("430x680")
+        self.geometry("620x800")
         self.resizable(False, False)
-        self.configure(fg_color=BG_CARD)
+        self.configure(fg_color=BG_MAIN)
         self.grab_set()
 
         self._construir_ui(datos_usuario)
 
     def _construir_ui(self, datos):
+        # PARCHE: tarjeta central proporcional (sin panel de marca, más
+        # sobrio para una acción rápida dentro de la app ya autenticada).
+        # Tamaño relativo a la ventana para no desbordar en distintas
+        # resoluciones/escalados de DPI.
+        card = ctk.CTkFrame(
+            self, fg_color=BG_CARD, corner_radius=12,
+            border_width=1, border_color=BORDER_INPUT
+        )
+        card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.9, relheight=0.94)
+
         ctk.CTkLabel(
-            self, text=f"EDICIÓN DE PERFIL (ID: {self.id_usuario})",
+            card, text=f"EDICIÓN DE PERFIL (ID: {self.id_usuario})",
             font=font_section(), text_color=TXT_MAIN
-        ).pack(pady=(20, 5))
+        ).pack(pady=(24, 5))
 
         # ScrollableFrame: garantiza que los botones del footer siempre sean visibles
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=20, pady=(0, 10))
+        scroll = ctk.CTkScrollableFrame(card, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=26, pady=(0, 14))
 
         def campo(label, valor_inicial):
             ctk.CTkLabel(scroll, text=label, font=font_small(),
                          text_color=TXT_MUTED).pack(anchor="w", pady=(10, 2))
             e = ctk.CTkEntry(
-                scroll, width=370, height=INPUT_H,
+                scroll, width=500, height=INPUT_H,
                 fg_color=BG_INPUT, border_color=BORDER_INPUT, text_color=TXT_INPUT
             )
             e.pack()
@@ -335,7 +351,7 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         # Botones de acción (dentro del scroll = siempre visibles)
         ctk.CTkButton(
             scroll, text="Guardar modificaciones",
-            font=font_section(), height=42, width=370,
+            font=font_section(), height=42, width=500,
             fg_color="#10B981", hover_color="#059669",
             text_color="white", corner_radius=BTN_RADIUS,
             command=self._guardar
@@ -345,7 +361,7 @@ class EditarUsuarioModal(ctk.CTkToplevel):
         if self.auth.es_administrador():
             ctk.CTkButton(
                 scroll, text="Resetear contraseña",
-                font=font_section(), height=BTN_H, width=370,
+                font=font_section(), height=BTN_H, width=500,
                 fg_color="#EF4444", hover_color="#B91C1C",
                 text_color="white", corner_radius=BTN_RADIUS,
                 command=self._resetear_password
@@ -450,3 +466,4 @@ class EditarUsuarioModal(ctk.CTkToplevel):
             messagebox.showinfo("Reset exitoso", msg, parent=self)
         else:
             messagebox.showerror("Error", msg, parent=self)
+
